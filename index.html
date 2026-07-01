@@ -3,7 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Priority Calculator</title>
+<title>My Planner</title>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Priority">
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIwIiBmaWxsPSIjMUExNzE0Ii8+PGxpbmUgeDE9IjI4IiB5MT0iMzUiIHgyPSI3MiIgeTI9IjM1IiBzdHJva2U9IiNGMkVGRTgiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PGxpbmUgeDE9IjI4IiB5MT0iNTAiIHgyPSI3MiIgeTI9IjUwIiBzdHJva2U9IiNGMkVGRTgiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PGxpbmUgeDE9IjI4IiB5MT0iNjUiIHgyPSI1NSIgeTI9IjY1IiBzdHJva2U9IiNGMkVGRTgiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PC9zdmc+">
+<script>
+  if ('serviceWorker' in navigator) {
+    const manifest = {
+      name: "My Planner",
+      short_name: "My Planner",
+      start_url: ".",
+      display: "standalone",
+      background_color: "#F2EFE8",
+      theme_color: "#1A1714",
+      icons: [{ src: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIwIiBmaWxsPSIjMUExNzE0Ii8+PGxpbmUgeDE9IjI4IiB5MT0iMzUiIHgyPSI3MiIgeTI9IjM1IiBzdHJva2U9IiNGMkVGRTgiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PGxpbmUgeDE9IjI4IiB5MT0iNTAiIHgyPSI3MiIgeTI9IjUwIiBzdHJva2U9IiNGMkVGRTgiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PGxpbmUgeDE9IjI4IiB5MT0iNjUiIHgyPSI1NSIgeTI9IjY1IiBzdHJva2U9IiNGMkVGRTgiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PC9zdmc+", sizes: "any", type: "image/svg+xml" }]
+    };
+    const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
+    const manifestURL = URL.createObjectURL(blob);
+    const link = document.createElement('link');
+    link.rel = 'manifest';
+    link.href = manifestURL;
+    document.head.appendChild(link);
+  }
+</script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; touch-action: manipulation; }
   body { background: #F2EFE8; font-family: -apple-system, 'Inter', sans-serif; min-height: 100vh; }
