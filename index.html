@@ -1,0 +1,2966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Priority Calculator</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; touch-action: manipulation; }
+  body { background: #F2EFE8; font-family: -apple-system, 'Inter', sans-serif; min-height: 100vh; }
+  .screen { padding: 32px 18px 80px; max-width: 560px; margin: 0 auto; }
+  .eyebrow { font-size: 10.5px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #9A9188; margin-bottom: 6px; }
+  h1 { font-family: Georgia, serif; font-size: 24px; color: #1A1714; margin-bottom: 8px; line-height: 1.25; }
+  .sub { font-size: 13px; color: #9A9188; margin-bottom: 20px; line-height: 1.6; }
+  .back-btn { display: flex; align-items: center; gap: 5px; background: transparent; border: none; cursor: pointer; color: #9A9188; font-size: 13px; font-weight: 600; padding: 0 0 20px 0; }
+  .primary-btn { width: 100%; padding: 13px; border-radius: 10px; background: #1A1714; color: #F2EFE8; border: none; font-size: 14px; font-weight: 700; cursor: pointer; transition: background 0.15s; }
+  .primary-btn:disabled { background: #C0B8AE; cursor: default; }
+  .card { background: #fff; border: 1px solid #E4DDD2; border-radius: 14px; padding: 20px; margin-bottom: 16px; }
+  .drag-handle { font-size: 18px; color: #C4BAB0; cursor: grab; padding: 0 10px 0 0; flex-shrink: 0; user-select: none; touch-action: none; line-height: 1; }
+  .drag-over { border-top: 2.5px solid #1A3A72 !important; }
+  .section-label { font-size: 10px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #C0B8AE; margin-bottom: 12px; }
+  .q-label { font-size: 13.5px; font-weight: 700; color: #1A1714; margin-bottom: 3px; }
+  .q-sub { font-size: 12px; color: #9A9188; margin-bottom: 8px; line-height: 1.4; }
+  .q-wrap { margin-bottom: 18px; }
+  .opt-btn { width: 100%; text-align: left; padding: 9px 14px; border-radius: 8px; border: 1px solid #E4DDD2; background: #fff; color: #1A1714; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.12s; margin-bottom: 6px; display: block; }
+  .opt-btn.active { border: 1.5px solid #1A1714; background: #1A1714; color: #F2EFE8; }
+  .opt-btn.greyed { background: #F7F5F1; color: #C0B8AE; cursor: default; }
+  .result-box { margin-top: 6px; padding: 14px 16px; border-radius: 10px; }
+  .flag-badge { display: inline-block; padding: 3px 9px; border-radius: 5px; font-size: 11.5px; font-weight: 800; letter-spacing: 0.06em; white-space: nowrap; }
+  .flag-badge.sm { font-size: 10.5px; padding: 2px 7px; }
+  .result-title { font-size: 14px; font-weight: 700; display: inline; margin-left: 10px; }
+  .result-desc { font-size: 12.5px; color: #5A534A; line-height: 1.55; margin-top: 7px; }
+  .field-label { font-size: 11px; font-weight: 700; color: #9A9188; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 7px; }
+  .field-wrap { margin-top: 12px; }
+  .collision-warning { font-size: 11.5px; color: #7A4500; background: #FEF0DC; border: 1px solid #F5C97A; border-radius: 7px; padding: 7px 10px; margin-top: 8px; line-height: 1.4; }
+  .capacity-warning { font-size: 11px; color: #8A8077; background: #F7F5F1; border: 1px solid #E4DDD2; border-radius: 7px; padding: 7px 10px; margin-top: 8px; line-height: 1.4; }
+  .light-nudge { font-size: 11px; color: #6B5D7A; background: #F3EEF7; border: 1px solid #DCCEE8; border-radius: 7px; padding: 7px 10px; margin-top: 8px; line-height: 1.45; }
+  .use-time-btn.light { background: #6B5D7A; }
+  .focus-suggestion { font-size: 11.5px; color: #1A3A72; background: #E6EDF9; border: 1px solid #9DB8E8; border-radius: 7px; padding: 9px 10px; margin-bottom: 8px; line-height: 1.45; }
+  .use-time-btn { display: block; margin-top: 7px; padding: 6px 12px; border-radius: 6px; border: none; background: #1A3A72; color: #fff; font-size: 11.5px; font-weight: 700; cursor: pointer; }
+  input[type="text"], input[type="time"], select { padding: 8px 10px; border-radius: 7px; border: 1px solid #E4DDD2; background: #fff; font-size: 13px; color: #1A1714; outline: none; }
+  input[type="text"] { width: 100%; }
+  select { display: block; margin-bottom: 7px; }
+  .task-name-display { font-family: Georgia, serif; font-size: 16px; font-weight: 700; color: #1A1714; margin-bottom: 14px; }
+  .task-name-display.cut { text-decoration: line-through; opacity: 0.5; }
+  .hat-wrap { margin-bottom: 18px; }
+  .hat-label { font-size: 11px; font-weight: 700; color: #9A9188; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .hat-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+  .hat-pill { padding: 6px 12px; border-radius: 20px; border: 1px solid #E4DDD2; background: #fff; color: #1A1714; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.12s; }
+  .hat-pill.active { border: 1.5px solid #1A1714; background: #1A1714; color: #F2EFE8; }
+  .ranked-panel { background: #1A1714; border-radius: 16px; padding: 20px; color: #F2EFE8; margin-top: 8px; margin-bottom: 24px; }
+  .ranked-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; }
+  .ranked-row + .ranked-row { border-top: 1px solid rgba(242,239,232,0.07); }
+  .ranked-name { font-family: Georgia, serif; font-size: 14.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ranked-name.cut { text-decoration: line-through; opacity: 0.4; }
+  .ranked-meta { font-size: 11.5px; color: #7A7068; margin-top: 2px; }
+  .ranked-triage { font-size: 10.5px; color: #5A534A; margin-top: 1px; }
+  .divider-line { display: flex; align-items: center; gap: 10px; margin: 12px 0 10px; }
+  .divider-line hr { flex: 1; border: none; border-top: 1px solid rgba(242,239,232,0.12); }
+  .divider-label { font-size: 10.5px; font-weight: 700; color: #5A534A; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; }
+  .divider-line.light hr { border-top: 1px solid #E4DDD2; }
+  .divider-line.light .divider-label { color: #9A9188; }
+  .displaced-notice { background: rgba(245,201,122,0.12); border: 1px solid rgba(245,201,122,0.3); border-radius: 9px; padding: 10px 12px; margin-bottom: 14px; font-size: 12.5px; color: #F5C97A; line-height: 1.5; }
+  .triage-overlay { position: fixed; inset: 0; background: rgba(26,23,20,0.55); z-index: 100; display: flex; align-items: flex-end; justify-content: center; }
+  .triage-sheet { background: #F2EFE8; border-radius: 20px 20px 0 0; padding: 24px 20px 40px; width: 100%; max-width: 560px; max-height: 85vh; overflow-y: auto; }
+  .legend-wrap { margin-bottom: 20px; border: 1px solid #E4DDD2; border-radius: 12px; background: #fff; overflow: hidden; }
+  .legend-toggle { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: transparent; border: none; cursor: pointer; }
+  .legend-body { padding: 4px 16px 14px; border-top: 1px solid #E4DDD2; }
+  .legend-row { display: flex; gap: 12px; padding: 9px 0; border-bottom: 1px solid #F5F2EE; align-items: flex-start; }
+  .legend-row:last-child { border-bottom: none; }
+  .copy-btn { background: rgba(242,239,232,0.08); border: 1px solid rgba(242,239,232,0.15); border-radius: 6px; color: #F2EFE8; font-size: 11.5px; font-weight: 700; padding: 5px 13px; cursor: pointer; transition: background 0.2s; letter-spacing: 0.03em; }
+  .copy-btn.done { background: #155C38; }
+  .add-task-btn { margin-top: 16px; width: 100%; padding: 11px; border-radius: 9px; border: 1px dashed rgba(242,239,232,0.2); background: transparent; color: #9A9188; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .dump-input { flex: 1; padding: 10px 12px; border-radius: 9px; border: 1px solid #E4DDD2; background: #fff; font-size: 13.5px; font-family: Georgia, serif; outline: none; color: #1A1714; }
+  .capacity-chips { display: flex; gap: 7px; flex-wrap: wrap; }
+  .cap-chip { padding: 7px 11px; border-radius: 8px; border: 1px solid #E4DDD2; background: #fff; color: #1A1714; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.12s; }
+  .cap-chip.active { border: 1.5px solid #1A1714; background: #1A1714; color: #F2EFE8; }
+  .profile-btn { width: 100%; text-align: left; padding: 13px 16px; border-radius: 10px; border: 1px solid #E4DDD2; background: #fff; color: #1A1714; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.13s; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .profile-btn.selected { border: 1.5px solid #1A1714; background: #1A1714; color: #F2EFE8; }
+  .profile-btn.maxed { background: #F7F5F1; color: #C0B8AE; cursor: default; }
+  .track-btn { width: 100%; text-align: left; padding: 16px 18px; border-radius: 12px; border: 1px solid #E4DDD2; background: #fff; color: #1A1714; cursor: pointer; transition: all 0.13s; margin-bottom: 12px; }
+  .track-btn.selected { border: 1.5px solid #1A1714; background: #1A1714; color: #F2EFE8; }
+  .track-btn.disabled-look { background: #E8E4DE; border-color: #D4CEC7; color: #9A9188; cursor: default; }
+  .track-btn-title { font-size: 15px; font-weight: 700; font-family: Georgia, serif; margin-bottom: 4px; }
+  .track-btn-desc { font-size: 12.5px; opacity: 0.7; line-height: 1.45; }
+  .name-input { width: 100%; padding: 13px 14px; border-radius: 10px; border: 1.5px solid #E4DDD2; background: #fff; font-size: 16px; font-family: Georgia, serif; font-weight: 600; outline: none; color: #1A1714; margin-bottom: 16px; }
+  .task-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .task-num { font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #9A9188; }
+  .remove-btn { border: none; background: transparent; color: #C0B8AE; font-size: 20px; cursor: pointer; padding: 0; line-height: 1; }
+  .faded { opacity: 0.5; }
+  .section-wrap { margin-bottom: 22px; }
+  .separator { border: none; border-top: 1px solid #E4DDD2; margin: 8px 0 20px; }
+  .ranked-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .ranked-eyebrow { font-size: 10px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #7A7068; }
+  .triage-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+  .close-btn { border: none; background: transparent; font-size: 22px; color: #9A9188; cursor: pointer; }
+  .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px); background: #1A1714; color: #F2EFE8; padding: 12px 22px; border-radius: 10px; font-size: 13.5px; font-weight: 600; box-shadow: 0 6px 20px rgba(26,23,20,0.25); z-index: 200; opacity: 0; transition: opacity 0.2s ease, transform 0.2s ease; pointer-events: none; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.error { background: #721A1A; }
+  .copy-fallback-overlay { position: fixed; inset: 0; background: rgba(26,23,20,0.55); z-index: 300; display: flex; align-items: flex-end; justify-content: center; }
+  .copy-fallback-sheet { background: #F2EFE8; border-radius: 20px 20px 0 0; padding: 24px 20px 36px; width: 100%; max-width: 560px; max-height: 80vh; overflow-y: auto; }
+  .copy-fallback-text { width: 100%; min-height: 160px; padding: 13px 14px; border-radius: 10px; border: 1.5px solid #E4DDD2; background: #fff; font-size: 13px; font-family: Georgia, serif; color: #1A1714; resize: vertical; margin-bottom: 14px; }
+</style>
+</head>
+<body>
+<div id="toast" class="toast"></div>
+<div id="app"></div>
+<script>
+// ─── STATE ───────────────────────────────────────────────────────────────────
+
+const state = {
+  step: "track",
+  userName: "",
+  track: null,
+  profiles: [],
+  rawTasks: Array(20).fill(""),
+  visibleTaskFields: 5,    // how many of the 20 raw task fields are currently shown
+  tasks: [],
+  capacity: null,
+  showTriage: false,
+  displaced: [],
+  legendOpen: false,
+  resumePromptShown: false,
+  focusWindows: null,      // array of {start, end} ranked strongest-first, or null if not set
+  focusWindowChoice: null, // "yes" | "skip" | null (not yet answered)
+  focusWindowCount: null,  // 1, 2, or 3 — used during setup only
+  dayBounds: null,         // {start, end} or null if not set
+  dayBoundsChoice: null,   // "yes" | "skip" | null
+  workHoursChoice: null,   // "yes" | "skip" | null — whether the day splits into work/personal time
+  workHours: null,         // {start, end} or null if not set
+  editingDayBounds: false, // true when revisiting the day-bounds entry screen via back navigation
+  fixedCommitments: [],    // array of {id, name, start, end} — today's immovable blocks (meetings etc), fresh each session, not a remembered default
+  fixedCommitmentsChoice: null, // "yes" | "skip" | null
+  breakTime: null,              // {start, duration} or null — today's planned break, treated as a fixed commitment
+  entryMethod: null,       // "paste" | "fields" | null — fast lane task entry method
+  pasteNote: "",           // raw pasted/typed note text before splitting
+  parsedTasks: [],         // editable lines after splitting the note, before becoming real tasks
+  autoPlanned: false,      // whether "Help me plan my schedule" has been run
+  boardMode: "edit",       // "view" | "edit" — which mode the board screen is in
+  editingTaskId: null,     // which task's board card is in edit mode, or null
+  setupOpenSections: {},   // which sections are expanded on the combined fast-track setup screen
+  copyFallbackText: null,  // set when clipboard API fails/times out, shows a manual-copy box
+  fastScoreStep: 0,        // which question screen we're on (0-3) in the new fast score flow
+};
+
+const STORAGE_KEY = "priorityCalc.session";
+const DEFAULTS_KEY = "priorityCalc.defaults";
+
+function saveSession() {
+  try {
+    const snapshot = {
+      step: state.step,
+      userName: state.userName,
+      track: state.track,
+      profiles: state.profiles,
+      rawTasks: state.rawTasks,
+      tasks: state.tasks,
+      capacity: state.capacity,
+      focusWindows: state.focusWindows,
+      focusWindowChoice: state.focusWindowChoice,
+      dayBounds: state.dayBounds,
+      dayBoundsChoice: state.dayBoundsChoice,
+      workHoursChoice: state.workHoursChoice,
+      workHours: state.workHours,
+      fixedCommitments: state.fixedCommitments,
+      fixedCommitmentsChoice: state.fixedCommitmentsChoice,
+      breakTime: state.breakTime,
+      entryMethod: state.entryMethod,
+      pasteNote: state.pasteNote,
+      parsedTasks: state.parsedTasks,
+      autoPlanned: state.autoPlanned,
+      boardMode: state.boardMode,
+      fastScoreStep: state.fastScoreStep || 0,
+      savedAt: Date.now(),
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+  } catch (e) { /* storage unavailable, fail silently */ }
+}
+
+function saveDefaults() {
+  try {
+    localStorage.setItem(DEFAULTS_KEY, JSON.stringify({
+      userName: state.userName,
+      track: state.track,
+      profiles: state.profiles,
+      focusWindows: state.focusWindows,
+      focusWindowChoice: state.focusWindowChoice,
+      dayBounds: state.dayBounds,
+      dayBoundsChoice: state.dayBoundsChoice,
+      workHoursChoice: state.workHoursChoice,
+      workHours: state.workHours,
+    }));
+  } catch (e) {}
+}
+
+function loadDefaults() {
+  try {
+    const raw = localStorage.getItem(DEFAULTS_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+
+function loadSession() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+
+function clearSession() {
+  try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+}
+
+// A session is worth resuming if it has at least a name and got past the very first step,
+// and hasn't already been fully wrapped up (we don't have a true "done" step, so we use
+// presence of at least one scored or in-progress task as the bar).
+function isResumable(snapshot) {
+  if (!snapshot) return false;
+  if (snapshot.step === "name" || snapshot.step === "track") return false;
+  if (!snapshot.userName) return false;
+  const hasProgress = (snapshot.tasks && snapshot.tasks.length > 0) ||
+                       (snapshot.rawTasks && snapshot.rawTasks.some(t => t.trim()));
+  return hasProgress;
+}
+
+function setState(patch) {
+  Object.assign(state, patch);
+  saveSession();
+  if (state.userName && state.track && state.profiles.length) saveDefaults();
+  if (state.step === "setup") {
+    requestAnimationFrame(render);
+  } else {
+    render();
+  }
+}
+
+function startFresh() {
+  clearSession();
+  const defaults = loadDefaults();
+  Object.assign(state, {
+    step: "track",
+    userName: defaults?.userName || "",
+    track: defaults?.track || null,
+    profiles: defaults?.profiles || [],
+    rawTasks: Array(20).fill(""),
+    visibleTaskFields: 5,
+    tasks: [],
+    capacity: null,
+    showTriage: false,
+    displaced: [],
+    legendOpen: false,
+    resumePromptShown: false,
+    focusWindows: defaults?.focusWindows || null,
+    focusWindowChoice: defaults?.focusWindowChoice || null,
+    focusWindowCount: null,
+    dayBounds: defaults?.dayBounds || null,
+    dayBoundsChoice: defaults?.dayBoundsChoice || null,
+    workHoursChoice: defaults?.workHoursChoice || null,
+    workHours: defaults?.workHours || null,
+    fixedCommitments: [],
+    fixedCommitmentsChoice: null,
+    breakTime: null,
+    entryMethod: null,
+    pasteNote: "",
+    parsedTasks: [],
+    autoPlanned: false,
+    boardMode: "edit",
+    editingTaskId: null,
+    setupOpenSections: {},
+  });
+  render();
+}
+
+// ─── CONSTANTS ───────────────────────────────────────────────────────────────
+
+const FLAGS = {
+  ACT:   { code:"ACT",   label:"Do it now",            color:"#155C38", bg:"#E4F5ED", border:"#A8D9BF" },
+  BLOCK: { code:"BLOCK", label:"Schedule and protect", color:"#7A4500", bg:"#FEF0DC", border:"#F5C97A" },
+  FLOW:  { code:"FLOW",  label:"Do when energy fits",  color:"#1A3A72", bg:"#E6EDF9", border:"#9DB8E8" },
+  FWD:   { code:"FWD",   label:"Pass it on",           color:"#4A1A72", bg:"#F0E8F9", border:"#C4A0E0" },
+  CUT:   { code:"CUT",   label:"Drop it",              color:"#721A1A", bg:"#F9E8E8", border:"#E0A0A0" },
+};
+
+const FLAG_DESCS = {
+  ACT:   "High stakes, good fit, manageable cost. Put this at the top of today.",
+  BLOCK: "Important but heavy. Don't squeeze it in. Book a real block of time.",
+  FLOW:  "Worth doing, but not screaming for today. Do it when you're in the right headspace.",
+  FWD:   "This doesn't need to go through you. Hand it to the right person.",
+  CUT:   "Low stakes, poor fit, or not yours to carry. Take it off your list.",
+};
+
+const PROFILES = [
+  { id:"leader",   label:"I lead a team or organisation" },
+  { id:"builder",  label:"I run a business or side project" },
+  { id:"employee", label:"I'm an employee" },
+  { id:"student",  label:"I'm a student" },
+  { id:"parent",   label:"I'm a parent" },
+  { id:"creative", label:"I'm a creative" },
+];
+
+const PROFILE_SWAP = {
+  leader:   { q:"Does this need your authority or final call?",            opts:["Anyone could handle this","Someone else could if pushed","Only I can decide or approve this"] },
+  builder:  { q:"Does this directly make money or build the business?",    opts:["Not really, it's admin or busywork","Loosely related to growth","Yes, directly moves income or the business forward"] },
+  employee: { q:"Is this actually your job to do?",                        opts:["It just landed on me, not really mine","Sort of, but it's grey area","Yes, it's clearly within my role"] },
+  parent:   { q:"Who else is affected if this doesn't happen?",            opts:["Just me","Someone else, but they'll manage","Someone who depends on me will be impacted"] },
+  creative: { q:"Does this need you to be in a specific headspace to do well?", opts:["No, I can do it in any state","Somewhat, but I can push through","Yes, it needs the right conditions or it'll be poor quality"] },
+};
+
+// Student has two swap questions
+const STUDENT_Q1 = { key:"gradeWeight", q:"How much does this count toward your final grade?", opts:["Minor or ungraded (participation, optional, low-weight)","Counts but not make-or-break (regular assignment, mid-term)","Major grade (final exam, dissertation, high-weight coursework)"] };
+const STUDENT_Q2 = { key:"careerVal",   q:"Outside of grades, does this build something for your future?", opts:["Not really","Somewhat (skills, exposure, networking)","Yes directly (portfolio piece, internship application, key relationship)"] };
+
+// Student deadline options include "Due this week"
+const STUDENT_DEADLINES = ["No deadline","Due later (weeks away)","Due this week","Due tomorrow","Due today"];
+const DEFAULT_DEADLINES  = ["No deadline","Due later","Due tomorrow","Due today"];
+
+const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+
+const DURATIONS = [
+  ...[10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90].map(m=>({mins:m, label:`${m} min`})),
+  {mins:120, label:"2 hrs"},
+  {mins:180, label:"3 hrs"},
+  {mins:240, label:"Half day"},
+];
+
+function durationLabel(mins) {
+  const d = DURATIONS.find(d => String(d.mins) === String(mins));
+  return d ? d.label : `${mins} min`;
+}
+
+// ─── SCORING ─────────────────────────────────────────────────────────────────
+
+function isStudent(profiles) { return profiles.includes("student"); }
+
+// For student, deadline values: 1=none 2=later 3=this week 4=tomorrow 5=today
+// For others: 1=none 2=later 3=tomorrow 4=today
+function deadlineToday(s, profiles) { return isStudent(profiles) ? s.deadline === 5 : s.deadline === 4; }
+function deadlineTomorrow(s, profiles) { return isStudent(profiles) ? s.deadline === 4 : s.deadline === 3; }
+function deadlineThisWeek(s, profiles) { return isStudent(profiles) && s.deadline === 3; }
+function deadlineUrgent(s, profiles) { return deadlineToday(s,profiles) || deadlineTomorrow(s,profiles); }
+
+function getSwapScore(s, profiles, activeHat) {
+  if (isStudent(profiles)) {
+    // combine grade weight + career value into a 1-3 score
+    const g = s.gradeWeight ?? 1;
+    const c = s.careerVal ?? 1;
+    const combined = Math.round((g + c) / 2);
+    return combined;
+  }
+  return s.swap ?? 1;
+}
+
+// Fast lane scoring: ownership, deadline, effort (1=light/2=medium/3=heavy), importance.
+// No profile-specific swap question here — that nuance lives in Deep Dive. Effort maps
+// directly to a default duration (30/60/90 min) for auto-placement.
+const EFFORT_DURATION = { 1: 30, 2: 60, 3: 90 };
+
+function scoreFast(task, profiles) {
+  const s = task.scores;
+  const today = deadlineToday(s, profiles);
+  const tomorrow = deadlineTomorrow(s, profiles);
+  const importance = s.importance ?? 1;
+
+  if (today) return importance >= 2 ? "ACT" : "BLOCK";
+  if (tomorrow && importance === 3) return "BLOCK";
+  if (tomorrow) return "FLOW";
+  if (importance === 1) return "CUT";
+  if (importance === 3) return "BLOCK";
+  return "FLOW";
+}
+
+function isFastComplete(task, profiles) {
+  const s = task.scores;
+  return s.deadline != null && s.effort != null && s.importance != null;
+}
+
+function scoreDeep(task, profiles) {
+  const s = task.scores;
+  const activeHat = s.hat ?? profiles[0];
+  if (s.ownership === 1) return "FWD";
+  const swap = getSwapScore(s, profiles, activeHat);
+  const stakes = (s.consequence ?? 1) + (s.window_ ?? 1);
+  const fit = swap + (s.energy ?? 1);
+  const costVal = s.cost ?? 1;
+  const today = deadlineToday(s, profiles);
+  const tomorrow = deadlineTomorrow(s, profiles);
+  const highStakes = stakes >= 4;
+  const goodFit = fit >= 4;
+  const heavyCost = costVal >= 3;
+  // Major grade overrides energy mismatch
+  const studentMajorGrade = isStudent(profiles) && (s.gradeWeight === 3);
+
+  if (today && s.ownership === 2) return (goodFit || highStakes) ? "ACT" : "BLOCK";
+  if (tomorrow && highStakes) return "BLOCK";
+  if (swap === 1 && stakes <= 3) return "CUT";
+  if (highStakes && goodFit && !heavyCost) return "ACT";
+  if (s.window_ === 3 && swap >= 2) return "ACT";
+  if (highStakes && heavyCost) return "BLOCK";
+  if (highStakes && s.energy === 1 && !studentMajorGrade) return "BLOCK";
+  if (studentMajorGrade && (tomorrow || deadlineThisWeek(s, profiles))) return "BLOCK";
+  if (goodFit && !heavyCost) return "FLOW";
+  if (stakes >= 3) return "BLOCK";
+  return "FLOW";
+}
+
+function scoreTask(task, track, profiles) {
+  return track === "fast" ? scoreFast(task, profiles) : scoreDeep(task, profiles);
+}
+
+function isDeepComplete(task, profiles) {
+  const s = task.scores;
+  if (s.ownership === 1) return s.deadline != null;
+  if (s.ownership == null) return false;
+  if (s.deadline == null || s.consequence == null || s.window_ == null || s.energy == null || s.cost == null) return false;
+  if (isStudent(profiles)) return s.gradeWeight != null && s.careerVal != null;
+  return s.swap != null;
+}
+
+function isComplete(task, track, profiles) {
+  return track === "fast" ? isFastComplete(task, profiles) : isDeepComplete(task, profiles);
+}
+
+const FLAG_ORDER = ["ACT","BLOCK","FLOW","FWD","CUT"];
+
+function rankTasks(tasks, track, profiles) {
+  return tasks
+    .filter(t => t.name.trim() && isComplete(t, track, profiles))
+    .map(t => ({ ...t, flag: scoreTask(t, track, profiles) }))
+    .sort((a,b) => {
+      const fo = FLAG_ORDER.indexOf(a.flag) - FLAG_ORDER.indexOf(b.flag);
+      if (fo !== 0) return fo;
+      return (b.scores.deadline ?? 0) - (a.scores.deadline ?? 0);
+    });
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+
+function uid() { return Math.random().toString(36).slice(2); }
+function makeTask(name) { return { id: uid(), name: name||"", scores:{}, scheduledTime:"", scheduledDay:"", duration:"", delegateTo:"", taskPeriod:null }; }
+
+// Day ordering: Today=0, Tomorrow=1, named weekdays=2 (relative order not resolved further), no day=99
+function dayRank(task, profiles) {
+  const s = task.scores;
+  if (deadlineToday(s, profiles)) return 0;
+  if (deadlineTomorrow(s, profiles)) return 1;
+  if (task.scheduledDay === "Today") return 0;
+  if (task.scheduledDay === "Tomorrow") return 1;
+  if (task.scheduledDay) return 2;
+  return 99;
+}
+
+function timeToMinutes(t) {
+  if (!t) return null;
+  const [h,m] = t.split(":").map(Number);
+  return h*60+m;
+}
+
+function taskDayKey(task, profiles) {
+  const s = task.scores;
+  const flag = task.flag || (isComplete(task, state.track, profiles) ? scoreTask(task, state.track, profiles) : null);
+  if (flag === "ACT") return "Today";
+  if (deadlineToday(s, profiles)) return "Today";
+  if (deadlineTomorrow(s, profiles)) return "Tomorrow";
+  return task.scheduledDay || "";
+}
+
+// Unified duration lookup: explicit task.duration wins if set, otherwise derive
+// from the fast lane's effort answer, otherwise fall back to a neutral 30 min.
+function taskDuration(task) {
+  if (task.duration) return Number(task.duration);
+  const effort = task.scores?.effort;
+  if (effort != null && EFFORT_DURATION[effort]) return EFFORT_DURATION[effort];
+  return 30;
+}
+
+function findCollision(task) {
+  const profiles = state.profiles;
+  const myDay = taskDayKey(task, profiles);
+  const myStart = timeToMinutes(task.scheduledTime);
+  if (!myDay || myStart == null) return null;
+  const myDur = taskDuration(task);
+  const myEnd = myStart + myDur;
+
+  for (const other of state.tasks) {
+    if (other.id === task.id) continue;
+    const otherDay = taskDayKey(other, profiles);
+    const otherStart = timeToMinutes(other.scheduledTime);
+    if (!otherDay || otherDay !== myDay || otherStart == null) continue;
+    const otherDur = taskDuration(other);
+    const otherEnd = otherStart + otherDur;
+    if (myStart < otherEnd && otherStart < myEnd) return { type: "task", name: other.name, scheduledTime: other.scheduledTime, duration: otherDur };
+  }
+  return null;
+}
+
+// Fixed commitments only ever apply to "Today" (they're entered fresh each session for
+// today specifically), so this only fires for tasks scheduled today.
+function findFixedCommitmentCollision(task) {
+  const profiles = state.profiles;
+  const myDay = taskDayKey(task, profiles);
+  if (myDay !== "Today") return null;
+  const myStart = timeToMinutes(task.scheduledTime);
+  if (myStart == null) return null;
+  const myDur = taskDuration(task);
+  const myEnd = myStart + myDur;
+
+  for (const c of (state.fixedCommitments || [])) {
+    const cStart = timeToMinutes(c.start), cEnd = timeToMinutes(c.end);
+    if (cStart == null || cEnd == null) continue;
+    if (myStart < cEnd && cStart < myEnd) return { type: "fixed", name: c.name, start: c.start, end: c.end };
+  }
+  return null;
+}
+
+// Convenience wrapper used by the UI: checks fixed commitments first (since those are
+// immovable and deserve the more pointed warning), falling back to the regular
+// task-vs-task collision check.
+function findAnyCollision(task) {
+  return findFixedCommitmentCollision(task) || findCollision(task);
+}
+
+// Returns ALL collisions (both fixed commitments and tasks) rather than stopping at
+// the first one. Used to show complete warning information in the edit card.
+function findAllCollisions(task) {
+  const results = [];
+  const profiles = state.profiles;
+  const myDay = taskDayKey(task, profiles);
+  const myStart = timeToMinutes(task.scheduledTime);
+  if (!myDay || myStart == null) return results;
+  const myDur = taskDuration(task);
+  const myEnd = myStart + myDur;
+
+  // Fixed commitments first
+  if (myDay === "Today") {
+    for (const c of (state.fixedCommitments || [])) {
+      const cStart = timeToMinutes(c.start), cEnd = timeToMinutes(c.end);
+      if (cStart == null || cEnd == null) continue;
+      if (myStart < cEnd && cStart < myEnd) results.push({ type: "fixed", name: c.name, start: c.start, end: c.end });
+    }
+  }
+
+  // Task-vs-task
+  for (const other of state.tasks) {
+    if (other.id === task.id) continue;
+    const otherDay = taskDayKey(other, profiles);
+    const otherStart = timeToMinutes(other.scheduledTime);
+    if (!otherDay || otherDay !== myDay || otherStart == null) continue;
+    const otherDur = taskDuration(other);
+    const otherEnd = otherStart + otherDur;
+    if (myStart < otherEnd && otherStart < myEnd) results.push({ type: "task", name: other.name, scheduledTime: other.scheduledTime, duration: otherDur });
+  }
+
+  return results;
+}
+
+// ─── FOCUS WINDOW MATCHING ───────────────────────────────────────────────────
+
+// A task's "weight" for window-matching purposes. Deep Dive tasks use cost + stakes.
+// Fast lane tasks use effort + importance on the same 1-3 scales, so the two are
+// comparable even though they come from different question sets.
+function taskWeight(task) {
+  const s = task.scores;
+  if (s.effort != null || s.importance != null) {
+    return (s.effort ?? 0) + (s.importance ?? 0) * 2; // importance weighted slightly higher
+  }
+  const cost = s.cost ?? 0;
+  const stakes = (s.consequence ?? 0) + (s.window_ ?? 0);
+  return cost + stakes;
+}
+
+function windowDurationMinutes(win) {
+  const s = timeToMinutes(win.start), e = timeToMinutes(win.end);
+  if (s == null || e == null) return 0;
+  return Math.max(0, e - s);
+}
+
+// How many minutes of a given window are already claimed by tasks scheduled inside it today,
+// using each task's real duration (falling back to 30 if unset), excluding the task passed as
+// `excludeId` (used when checking "would this task fit" before it's counted against itself).
+function windowMinutesUsed(win, excludeId) {
+  if (!win || !win.start || !win.end) return 0;
+  const winStart = timeToMinutes(win.start), winEnd = timeToMinutes(win.end);
+  let used = 0;
+  for (const t of state.tasks) {
+    if (t.id === excludeId) continue;
+    if (!t.scheduledTime) continue;
+    const day = taskDayKey(t, state.profiles);
+    if (day !== "Today") continue; // focus windows are a daily pattern, only count against today
+    const start = timeToMinutes(t.scheduledTime);
+    if (start == null || start < winStart || start >= winEnd) continue;
+    used += taskDuration(t);
+  }
+  // Fixed commitments eat into window capacity too, even though they're not "tasks".
+  // Count the overlap, not the full commitment duration, in case it only partially
+  // overlaps the window's edge.
+  for (const c of (state.fixedCommitments || [])) {
+    const cStart = timeToMinutes(c.start), cEnd = timeToMinutes(c.end);
+    if (cStart == null || cEnd == null) continue;
+    const overlapStart = Math.max(cStart, winStart);
+    const overlapEnd = Math.min(cEnd, winEnd);
+    if (overlapEnd > overlapStart) used += (overlapEnd - overlapStart);
+  }
+  return used;
+}
+
+function windowRemainingMinutes(win, excludeId) {
+  return Math.max(0, windowDurationMinutes(win) - windowMinutesUsed(win, excludeId));
+}
+
+// Returns the ranked list of this session's heavy, schedulable, not-yet-timed tasks,
+// heaviest first, only ACT/BLOCK (FLOW is "whenever," doesn't need a strong window).
+function heavyUnscheduledTasks() {
+  return state.tasks
+    .map(t => ({ ...t, flag: isComplete(t, state.track, state.profiles) ? scoreTask(t, state.track, state.profiles) : null }))
+    .filter(t => (t.flag === "ACT" || t.flag === "BLOCK") && !t.scheduledTime && taskWeight(t) >= 4)
+    .sort((a,b) => taskWeight(b) - taskWeight(a));
+}
+
+// Given a task, find the best-ranked focus window that actually has room for its duration.
+// Walks windows in rank order (best first) and picks the first one with enough remaining
+// capacity. If none have room, returns null and the field is left open for manual entry.
+function focusWindowSuggestion(task) {
+  if (!state.focusWindows || !state.focusWindows.length) return null;
+  if (task.scheduledTime) return null; // already scheduled, no need to suggest
+  const flag = task.flag;
+  if (flag !== "ACT" && flag !== "BLOCK") return null;
+  if (taskWeight(task) < 4) return null;
+
+  const myDur = taskDuration(task);
+
+  for (let w = 0; w < state.focusWindows.length; w++) {
+    const win = state.focusWindows[w];
+    if (!win || !win.start || !win.end) continue;
+    const remaining = windowRemainingMinutes(win, task.id);
+    if (remaining < myDur) continue;
+
+    // Find an actual free slot inside this window, not just its literal start time,
+    // since a fixed commitment or another task may already occupy the opening minutes.
+    const winStart = timeToMinutes(win.start), winEnd = timeToMinutes(win.end);
+    const occupied = [];
+    for (const t of state.tasks) {
+      if (t.id === task.id || !t.scheduledTime) continue;
+      if (taskDayKey(t, state.profiles) !== "Today") continue;
+      const start = timeToMinutes(t.scheduledTime);
+      if (start == null) continue;
+      occupied.push({ start, end: start + taskDuration(t) });
+    }
+    for (const c of (state.fixedCommitments || [])) {
+      const cStart = timeToMinutes(c.start), cEnd = timeToMinutes(c.end);
+      if (cStart != null && cEnd != null) occupied.push({ start: cStart, end: cEnd });
+    }
+    const slot = findOpenSlot(winStart, winEnd, myDur, occupied);
+    if (slot != null) {
+      return { window: { start: minutesToTime(slot), end: win.end }, rankLabel: WINDOW_RANK_LABELS[w] || `Window ${w+1}`, remaining };
+    }
+  }
+  return null; // every window is full for this task's duration
+}
+
+// If a task is scheduled (manually, not via suggestion) inside a focus window that doesn't
+// have room for its duration, warn — separate from collision, this is about window crowding,
+// not literal double-booking.
+function focusWindowCapacityWarning(task) {
+  if (!state.focusWindows || !state.focusWindows.length) return null;
+  if (!task.scheduledTime) return null;
+  const day = taskDayKey(task, state.profiles);
+  if (day !== "Today") return null;
+  const start = timeToMinutes(task.scheduledTime);
+  if (start == null) return null;
+  const myDur = taskDuration(task);
+
+  for (let w = 0; w < state.focusWindows.length; w++) {
+    const win = state.focusWindows[w];
+    const winStart = timeToMinutes(win.start), winEnd = timeToMinutes(win.end);
+    if (winStart == null || winEnd == null) continue;
+    if (start < winStart || start >= winEnd) continue;
+    const remaining = windowRemainingMinutes(win, task.id);
+    if (remaining < myDur) {
+      return { rankLabel: WINDOW_RANK_LABELS[w] || `Window ${w+1}`, remaining };
+    }
+    return null; // found the window it's in, and it fits, no warning needed
+  }
+  return null;
+}
+
+// Light tasks (low cost) scheduled inside a focus window get a gentle nudge to move out,
+// since focus windows are a limited resource better spent on heavier work.
+function lightTaskInWindowNudge(task) {
+  if (!state.focusWindows || !state.focusWindows.length) return null;
+  if (!task.scheduledTime) return null;
+  const s = task.scores;
+  const cost = s.cost ?? 0;
+  if (cost >= 2) return null; // only nudge genuinely light tasks
+  const day = taskDayKey(task, state.profiles);
+  if (day !== "Today") return null;
+  const start = timeToMinutes(task.scheduledTime);
+  if (start == null) return null;
+
+  for (let w = 0; w < state.focusWindows.length; w++) {
+    const win = state.focusWindows[w];
+    const winStart = timeToMinutes(win.start), winEnd = timeToMinutes(win.end);
+    if (winStart == null || winEnd == null) continue;
+    if (start >= winStart && start < winEnd) {
+      // suggest the nearest hour just after this window closes
+      const suggestedStart = winEnd;
+      const hh = String(Math.floor(suggestedStart/60)).padStart(2,"0");
+      const mm = String(suggestedStart%60).padStart(2,"0");
+      return { rankLabel: WINDOW_RANK_LABELS[w] || `Window ${w+1}`, suggestedTime: `${hh}:${mm}` };
+    }
+  }
+  return null;
+}
+
+// Only fires when the person has both set up a work/home split AND explicitly marked
+// this specific task with a preference — never a blanket check run against everything,
+// so it stays rare and relevant rather than a constant presence. Purely informative,
+// Deep Dive never auto-corrects, just flags the mismatch and lets them decide.
+function timePreferenceMismatch(task) {
+  if (state.workHoursChoice !== "yes" || !state.workHours?.start || !state.workHours?.end) return null;
+  const pref = task.scores?.timePreference ?? 0;
+  if (pref === 0) return null; // no preference set, nothing to check
+  if (!task.scheduledTime) return null;
+  const day = taskDayKey(task, state.profiles);
+  if (day !== "Today") return null; // work hours only meaningfully apply to today
+
+  const start = timeToMinutes(task.scheduledTime);
+  if (start == null) return null;
+  const workStart = timeToMinutes(state.workHours.start), workEnd = timeToMinutes(state.workHours.end);
+  if (workStart == null || workEnd == null) return null;
+
+  const inWorkHours = start >= workStart && start < workEnd;
+  if (pref === 1 && !inWorkHours) return { wanted: "during work hours" };
+  if (pref === 2 && inWorkHours) return { wanted: "after work" };
+  return null;
+}
+
+function flagBadge(code, small) {
+  const f = FLAGS[code];
+  return `<span class="flag-badge${small?" sm":""}" style="background:${f.bg};border:1px solid ${f.border};color:${f.color}">${f.code}</span>`;
+}
+
+function setScore(taskId, key, val) {
+  setState({ tasks: state.tasks.map(t => t.id === taskId ? {...t, scores:{...t.scores,[key]:val}} : t) });
+}
+
+function setTaskField(taskId, key, val) {
+  setState({ tasks: state.tasks.map(t => t.id === taskId ? {...t,[key]:val} : t) });
+}
+
+// For free-text inputs (like "who gets this"), updating state on every keystroke via
+// setState would re-render the whole screen and destroy/recreate the input, losing
+// focus and cursor position after each character. This updates state silently and
+// only triggers a real render on blur, so typing feels normal.
+function setTaskFieldQuiet(taskId, key, val) {
+  state.tasks = state.tasks.map(t => t.id === taskId ? {...t,[key]:val} : t);
+}
+function commitTaskField(taskId, key, val) {
+  setTaskField(taskId, key, val);
+}
+
+function saveDelegate(taskId) {
+  const input = document.getElementById(`delegate-input-${taskId}`);
+  const val = input ? input.value.trim() : "";
+  if (!val) return; // require a name before saving
+  setState({
+    tasks: state.tasks.map(t => t.id === taskId ? {...t, delegateTo: val} : t),
+    editingTaskId: null,
+  });
+}
+
+function hatLabel(pid) {
+  const p = PROFILES.find(p => p.id === pid);
+  if (!p) return pid;
+  return p.label.replace(/^I('m| lead| run)?\s+/i,"");
+}
+
+// ─── QUESTION RENDERER ───────────────────────────────────────────────────────
+
+function renderQ(taskId, key, question, sub, options, value) {
+  return `
+    <div class="q-wrap">
+      <div class="q-label">${question}</div>
+      ${sub ? `<div class="q-sub">${sub}</div>` : ""}
+      ${options.map((opt,i) => `
+        <button class="opt-btn${value===i+1?" active":""}" onclick="setScore('${taskId}','${key}',${i+1})">${opt}</button>
+      `).join("")}
+    </div>`;
+}
+
+// ─── TASK CARD ───────────────────────────────────────────────────────────────
+
+function renderTaskCard(task, index, track, profiles, totalTasks) {
+  const s = task.scores;
+  const isMulti = profiles.length > 1;
+  const activeHat = s.hat ?? profiles[0];
+  const complete = isComplete(task, track, profiles);
+  const flag = complete ? scoreTask(task, track, profiles) : null;
+  const isCut = flag === "CUT";
+  const isStudent_ = isStudent(profiles);
+  const deadlines = isStudent_ ? STUDENT_DEADLINES : DEFAULT_DEADLINES;
+
+  let hatHtml = "";
+  if (isMulti) {
+    hatHtml = `
+      <div class="hat-wrap">
+        <div class="hat-label">Which hat are you wearing for this task?</div>
+        <div class="hat-pills">
+          ${profiles.map(pid => `
+            <button class="hat-pill${activeHat===pid?" active":""}" onclick="setScore('${task.id}','hat','${pid}')">${hatLabel(pid)}</button>
+          `).join("")}
+        </div>
+      </div>`;
+  }
+
+  // Build questions based on track
+  let questionsHtml = "";
+
+  if (track === "fast") {
+    questionsHtml += renderQ(task.id, "deadline", "When is this due?", null, deadlines, s.deadline);
+    if (isStudent_) {
+      questionsHtml += renderQ(task.id, "gradeWeight", STUDENT_Q1.q, null, STUDENT_Q1.opts, s.gradeWeight);
+      questionsHtml += renderQ(task.id, "careerVal",   STUDENT_Q2.q, null, STUDENT_Q2.opts, s.careerVal);
+    } else {
+      const sw = PROFILE_SWAP[activeHat] || PROFILE_SWAP[profiles[0]];
+      questionsHtml += renderQ(task.id, "swap", sw.q, null, sw.opts, s.swap);
+    }
+    questionsHtml += renderQ(task.id, "delegate", "Can someone else handle this?", null, ["No, it has to be me","Yes, I could pass it on"], s.delegate);
+  }
+
+  if (track === "deep") {
+    questionsHtml += `<div class="section-wrap"><div class="section-label">Ownership</div>`;
+    questionsHtml += renderQ(task.id, "ownership", "Is this yours to do?", "Be honest. Does this actually need to go through you?", ["Someone else can do this","Yes, it has to be me"], s.ownership);
+    questionsHtml += `</div>`;
+
+    if (s.ownership === 2) {
+      questionsHtml += `<div class="section-wrap"><div class="section-label">Deadline</div>`;
+      questionsHtml += renderQ(task.id, "deadline", "When is this due?", null, deadlines, s.deadline);
+      questionsHtml += `</div>`;
+
+      questionsHtml += `<div class="section-wrap"><div class="section-label">Stakes</div>`;
+      questionsHtml += renderQ(task.id, "consequence", "What happens if this doesn't get done this week?", null, ["Nothing breaks, life goes on","Something slows down or gets harder","Real damage: missed money, broken trust, or closed doors"], s.consequence);
+      questionsHtml += renderQ(task.id, "window_", "How long is the window open?", null, ["Open indefinitely, no real urgency","Narrowing, the opportunity won't last","Closing now, miss it soon and it's gone"], s.window_);
+      questionsHtml += `</div>`;
+
+      questionsHtml += `<div class="section-wrap"><div class="section-label">Fit</div>`;
+      if (isStudent_) {
+        questionsHtml += renderQ(task.id, "gradeWeight", STUDENT_Q1.q, null, STUDENT_Q1.opts, s.gradeWeight);
+        questionsHtml += renderQ(task.id, "careerVal",   STUDENT_Q2.q, null, STUDENT_Q2.opts, s.careerVal);
+      } else {
+        const sw = PROFILE_SWAP[activeHat] || PROFILE_SWAP[profiles[0]];
+        questionsHtml += renderQ(task.id, "swap", sw.q, null, sw.opts, s.swap);
+      }
+      questionsHtml += renderQ(task.id, "energy", "Do you have the energy this needs right now?", null, ["No, wrong time for this kind of task","I can push through it","Yes, I'm in the right headspace"], s.energy);
+      questionsHtml += `</div>`;
+
+      questionsHtml += `<div class="section-wrap"><div class="section-label">Cost</div>`;
+      questionsHtml += renderQ(task.id, "cost", "How heavy is this task?", "Time and mental load combined.", ["Light: under an hour, low focus needed","Medium: a few hours, real concentration needed","Heavy: spans days or takes serious mental effort"], s.cost);
+      questionsHtml += renderQ(task.id, "dependency", "Does this connect to other tasks on your list?", null, ["No, it stands alone","Something else must happen before this","Other tasks are waiting on this one"], s.dependency);
+      if (state.workHoursChoice === "yes" && state.workHours) {
+        questionsHtml += `
+          <div class="q-wrap">
+            <div class="q-label">When would you rather do this?</div>
+            <div class="q-sub">Optional, only if you have a preference. We'll give you a heads up if your chosen time doesn't match.</div>
+            <div class="hat-pills">
+              ${[
+                {v:0, label:"No preference"},
+                {v:1, label:"During work hours"},
+                {v:2, label:"After work"},
+              ].map(opt => `<button class="hat-pill${(s.timePreference??0)===opt.v?" active":""}" onclick="setScore('${task.id}','timePreference',${opt.v})">${opt.label}</button>`).join("")}
+            </div>
+          </div>`;
+      }
+      questionsHtml += `</div>`;
+    }
+
+    if (s.ownership === 1) {
+      questionsHtml += `<div class="section-wrap"><div class="section-label">Deadline</div>`;
+      questionsHtml += renderQ(task.id, "deadline", "When is this due?", null, deadlines, s.deadline);
+      questionsHtml += `</div>`;
+    }
+  }
+
+  // Result
+  let resultHtml = "";
+  if (complete && flag) {
+    const f = FLAGS[flag];
+    let extraHtml = "";
+
+    if (flag === "ACT" || flag === "BLOCK" || flag === "FLOW") {
+      const autoDay = flag === "ACT" ? "Today" : deadlineToday(s, profiles) ? "Today" : deadlineTomorrow(s, profiles) ? "Tomorrow" : null;
+      const dayVal = autoDay || task.scheduledDay || "";
+      const collision = findAnyCollision(task);
+      const suggestion = focusWindowSuggestion({ ...task, flag });
+      const capacityWarning = focusWindowCapacityWarning(task);
+      const lightNudge = lightTaskInWindowNudge(task);
+      const prefMismatch = timePreferenceMismatch(task);
+      extraHtml = `<div class="field-wrap">
+        <div class="field-label">${flag==="ACT" ? "When will you do this?" : flag==="BLOCK" ? "When will you block time?" : "When do you plan to do this?"}</div>
+        ${autoDay
+          ? `<div style="font-size:12px;color:#9A9188;margin-bottom:6px">Set for ${autoDay.toLowerCase()}, pick a time.</div>`
+          : `<select onchange="setTaskField('${task.id}','scheduledDay',this.value)">
+               <option value="">Pick a day</option>
+               ${DAYS.map(d=>`<option value="${d}"${task.scheduledDay===d?" selected":""}>${d}</option>`).join("")}
+             </select>`
+        }
+        ${suggestion ? `
+          <div class="focus-suggestion">
+            This is one of your heavier tasks today. Your ${suggestion.rankLabel.toLowerCase()} is ${formatTime12(suggestion.window.start)}–${formatTime12(suggestion.window.end)}, with ${suggestion.remaining} min still free. Want to schedule it there?
+            <button class="use-time-btn" onclick="setTaskField('${task.id}','scheduledTime','${suggestion.window.start}')">Use this time</button>
+          </div>` : ""}
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:${autoDay?"0":"0"}">
+          <input type="time" value="${task.scheduledTime||""}" onchange="setTaskField('${task.id}','scheduledTime',this.value)">
+          <select onchange="setTaskField('${task.id}','duration',this.value)" style="margin-bottom:0">
+            <option value="">Duration</option>
+            ${DURATIONS.map(d=>`<option value="${d.mins}"${String(task.duration)===String(d.mins)?" selected":""}>${d.label}</option>`).join("")}
+          </select>
+        </div>
+        ${(() => {
+          const collisions = findAllCollisions(task);
+          if (!collisions.length) return "";
+          const alt = collisions.some(c => c.type === "fixed") ? suggestAlternativeTime(task) : null;
+          return collisions.map(c => {
+            if (c.type === "fixed") return `<div class="collision-warning">This clashes with "${escHtml(c.name)}" (${formatTime12(c.start)}–${formatTime12(c.end)}), which can't move.${alt ? ` Try ${formatTime12(alt)} instead?` : ""}${alt ? `<br><button class="use-time-btn" style="margin-top:6px" onclick="setTaskField('${task.id}','scheduledTime','${alt}')">Use ${formatTime12(alt)}</button>` : ""}</div>`;
+            return `<div class="collision-warning">Overlaps with "${escHtml(c.name)}" (${formatTime12(c.scheduledTime)}${c.duration ? ` for ${durationLabel(c.duration)}` : ""})</div>`;
+          }).join("");
+        })()}
+        ${capacityWarning ? `<div class="capacity-warning">Your ${capacityWarning.rankLabel.toLowerCase()} only has ${capacityWarning.remaining} min left, this task may not fully fit. You can still keep it here, or try a different time.</div>` : ""}
+        ${prefMismatch ? `<div class="capacity-warning">You said you'd rather do this ${prefMismatch.wanted}, this time doesn't match. Totally your call, just flagging it.</div>` : ""}
+        ${lightNudge ? `<div class="light-nudge">This is a lighter task, your ${lightNudge.rankLabel.toLowerCase()} might be better saved for heavier work.
+          <button class="use-time-btn light" onclick="setTaskField('${task.id}','scheduledTime','${lightNudge.suggestedTime}')">Move to ${formatTime12(lightNudge.suggestedTime)}</button>
+        </div>` : ""}
+      </div>`;
+    }
+    if (flag === "FWD") {
+      extraHtml = `<div class="field-wrap">
+        <div class="field-label">Who gets this?</div>
+        <input type="text" placeholder="Name or role" value="${task.delegateTo||""}" oninput="setTaskFieldQuiet('${task.id}','delegateTo',this.value)" onblur="commitTaskField('${task.id}','delegateTo',this.value)">
+      </div>`;
+    }
+
+    resultHtml = `
+      <div class="result-box" style="background:${f.bg};border:1px solid ${f.border}">
+        ${flagBadge(flag)}<span class="result-title" style="color:${f.color}">${f.label}</span>
+        <div class="result-desc">${FLAG_DESCS[flag]}</div>
+        ${extraHtml}
+      </div>`;
+  }
+
+  return `
+    <div class="card" style="${isCut?"opacity:0.6":""}">
+      <div class="task-header">
+        <span class="task-num">Task ${index+1}</span>
+        ${totalTasks > 1 ? `<button class="remove-btn" onclick="removeTask('${task.id}')">×</button>` : ""}
+      </div>
+      <div class="task-name-display${isCut?" cut":""}">${escHtml(task.name)}</div>
+      ${hatHtml}
+      ${questionsHtml}
+      ${resultHtml}
+    </div>`;
+}
+
+// ─── FAST LANE: SCORING SCREEN ───────────────────────────────────────────────
+
+function renderFastTaskCard(task, index) {
+  const s = task.scores;
+  const complete = isFastComplete(task, state.profiles);
+
+  let body = "";
+  body += renderQ(task.id, "deadline", "When is this due?", null, DEFAULT_DEADLINES, s.deadline);
+  body += renderQ(task.id, "effort", "How much effort will this take?", null, ["Light (under 30 min)","Medium (about 1 hour)","Heavy (about 90 min or more)"], s.effort);
+  body += renderQ(task.id, "importance", "Does this matter, or is it just on your plate?", null, ["Not really","Somewhat","Yes, directly"], s.importance);
+  if (state.workHoursChoice === "yes" && state.workHours) {
+    body += `
+      <div class="q-wrap">
+        <div class="q-label">When would you rather do this?</div>
+        <div class="q-sub">Only if you have a preference.</div>
+        <div class="hat-pills">
+          ${[
+            {v:0, label:"No preference"},
+            {v:1, label:"During work hours"},
+            {v:2, label:"After work"},
+          ].map(opt => `<button class="hat-pill${(s.timePreference??0)===opt.v?" active":""}" onclick="setScore('${task.id}','timePreference',${opt.v})">${opt.label}</button>`).join("")}
+        </div>
+      </div>`;
+  }
+
+  return `
+    <div class="card">
+      <div class="task-header">
+        <span class="task-num">Task ${index+1}</span>
+        ${state.tasks.length>1 ? `<button class="remove-btn" onclick="removeTask('${task.id}')">×</button>` : ""}
+      </div>
+      <div class="task-name-display">${escHtml(task.name)}</div>
+      ${body}
+    </div>`;
+}
+
+const FAST_SCORE_QUESTIONS = [
+  {
+    key: "today",
+    q: "Which of these are due today?",
+    sub: "Tap all that apply. Skip if none.",
+    setScore: (task, selected) => {
+      if (selected) {
+        task.scores.deadline = 4;
+      } else if (task.scores.deadline === 4) {
+        task.scores.deadline = null;
+      }
+    },
+    isSelected: (task) => task.scores.deadline === 4,
+  },
+  {
+    key: "tomorrow",
+    q: "Which are due tomorrow?",
+    sub: "From what\'s left. Tap all that apply.",
+    setScore: (task, selected) => {
+      if (selected) {
+        task.scores.deadline = 3;
+      } else if (task.scores.deadline === 3) {
+        task.scores.deadline = null;
+      }
+    },
+    isSelected: (task) => task.scores.deadline === 3,
+    isGreyed: (task) => task.scores.deadline === 4,
+  },
+  {
+    key: "effort",
+    q: "Which will take more than an hour?",
+    sub: "Anything that needs a real block of time.",
+    setScore: (task, selected) => { task.scores.effort = selected ? 3 : 1; },
+    isSelected: (task) => task.scores.effort === 3,
+  },
+  {
+    key: "importance",
+    q: "Which would have real consequences if left undone today?",
+    sub: "A missed deadline, a displeased manager, money on the table — anything with a real cost.",
+    setScore: (task, selected) => { task.scores.importance = selected ? 3 : 1; },
+    isSelected: (task) => task.scores.importance === 3,
+  },
+];
+
+function fastScoreToggle(taskId, stepIndex) {
+  const q = FAST_SCORE_QUESTIONS[stepIndex];
+  const tasks = state.tasks.map(t => {
+    if (t.id !== taskId) return t;
+    const wasSelected = q.isSelected(t);
+    const updated = { ...t, scores: { ...t.scores } };
+    q.setScore(updated, !wasSelected);
+    return updated;
+  });
+  setState({ tasks });
+}
+
+function fastScoreNext() {
+  const nextStep = (state.fastScoreStep || 0) + 1;
+  if (nextStep >= FAST_SCORE_QUESTIONS.length) {
+    // All questions answered — fill in any nulls with defaults then proceed
+    const tasks = state.tasks.map(t => {
+      const s = { ...t.scores };
+      if (s.deadline == null) s.deadline = 2;
+      if (s.effort == null) s.effort = 1;
+      if (s.importance == null) s.importance = 1;
+      return { ...t, scores: s };
+    });
+    setState({ tasks, fastScoreStep: 0 });
+    runAutoPlacement();
+  } else {
+    setState({ fastScoreStep: nextStep });
+  }
+}
+
+function fastScoreBack() {
+  const step = state.fastScoreStep || 0;
+  if (step === 0) {
+    setState({ fastScoreStep: 0, step: state.entryMethod === "paste" ? "paste" : "dump" });
+  } else {
+    setState({ fastScoreStep: step - 1 });
+  }
+}
+
+function screenFastScore() {
+  const step = state.fastScoreStep || 0;
+  const q = FAST_SCORE_QUESTIONS[step];
+  const total = FAST_SCORE_QUESTIONS.length;
+  const dots = FAST_SCORE_QUESTIONS.map((_,i) =>
+    `<div style="height:3px;flex:1;border-radius:2px;background:${i < step ? "#1A1714" : i === step ? "#9A9188" : "#E4DDD2"};transition:background 0.2s"></div>`
+  ).join("");
+  const isLast = step === total - 1;
+  const taskItems = state.tasks.map(t => {
+    const selected = q.isSelected(t);
+    const greyed = q.isGreyed ? q.isGreyed(t) : false;
+    return `
+      <button onclick="${greyed ? "" : `fastScoreToggle('${t.id}',${step})`}"
+        style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:10px;border:${selected ? "1.5px solid #1A1714" : "0.5px solid #E4DDD2"};background:${selected ? "#F2EFE8" : "#fff"};cursor:${greyed ? "default" : "pointer"};width:100%;text-align:left;margin-bottom:8px;opacity:${greyed ? "0.35" : "1"};font-family:inherit">
+        <div style="width:18px;height:18px;border-radius:50%;border:${selected ? "none" : "1.5px solid #C0B8AE"};background:${selected ? "#1A1714" : "transparent"};flex-shrink:0;display:flex;align-items:center;justify-content:center">
+          ${selected ? `<div style="width:7px;height:7px;border-radius:50%;background:#F2EFE8"></div>` : ""}
+        </div>
+        <span style="font-size:13px;color:${greyed ? "#9A9188" : "#1A1714"};line-height:1.35">${escHtml(t.name)}</span>
+      </button>`;
+  }).join("");
+  return `<div class="screen">
+    <div style="display:flex;gap:6px;margin-bottom:24px">${dots}</div>
+    <div class="eyebrow" style="margin-bottom:6px">Question ${step + 1} of ${total}</div>
+    <h1 style="margin-bottom:4px">${q.q}</h1>
+    <p class="sub">${q.sub}</p>
+    <div style="margin-bottom:24px">${taskItems}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <button class="back-btn" style="padding:0" onclick="fastScoreBack()">← Back</button>
+      <button class="primary-btn" style="width:auto;padding:11px 28px" onclick="fastScoreNext()">${isLast ? "See my plan" : "Next →"}</button>
+    </div>
+    <button class="add-task-btn" style="margin-top:12px;border-style:solid;color:#B08A6A" onclick="if(confirm('Clear this list and start over?'))startFresh()">Start a new list</button>
+  </div>`;
+}
+
+// ─── AUTO-PLACEMENT ──────────────────────────────────────────────────────────
+
+// Finds the next open slot of at least `dur` minutes within [dayStart, dayEnd),
+// avoiding any minute range already occupied by tasks in `occupied` (array of
+// {start, end} in minutes). Returns a start-minute or null if nothing fits.
+function findOpenSlot(dayStart, dayEnd, dur, occupied) {
+  const sorted = [...occupied].sort((a,b) => a.start - b.start);
+  let cursor = dayStart;
+  for (const block of sorted) {
+    if (block.start - cursor >= dur) return cursor;
+    cursor = Math.max(cursor, block.end);
+  }
+  if (dayEnd - cursor >= dur) return cursor;
+  return null;
+}
+
+function minutesToTime(mins) {
+  const h = Math.floor(mins/60) % 24, m = mins % 60;
+  return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;
+}
+
+// Suggests the next open slot today for `task`, avoiding every other scored task
+// already scheduled today plus every fixed commitment. Used to offer an alternative
+// when a fixed commitment collision is found, since those can't be worked around any
+// other way (unlike a clash between two flexible tasks, which the person might
+// deliberately want to leave as-is).
+function suggestAlternativeTime(task) {
+  const profiles = state.profiles;
+  const dur = taskDuration(task);
+  const dayStart = state.dayBounds?.start ? timeToMinutes(state.dayBounds.start) : 8*60;
+  const dayEnd = state.dayBounds?.end ? timeToMinutes(state.dayBounds.end) : 20*60;
+
+  const occupied = [];
+  for (const other of state.tasks) {
+    if (other.id === task.id) continue;
+    if (taskDayKey(other, profiles) !== "Today") continue;
+    const start = timeToMinutes(other.scheduledTime);
+    if (start == null) continue;
+    occupied.push({ start, end: start + taskDuration(other) });
+  }
+  for (const c of (state.fixedCommitments || [])) {
+    const cStart = timeToMinutes(c.start), cEnd = timeToMinutes(c.end);
+    if (cStart != null && cEnd != null) occupied.push({ start: cStart, end: cEnd });
+  }
+
+  const slot = findOpenSlot(dayStart, dayEnd, dur, occupied);
+  return slot != null ? minutesToTime(slot) : null;
+}
+
+// Runs once, placing every Today-bound, schedulable task (ACT/BLOCK/FLOW, not FWD/CUT)
+// onto the day: heaviest+most-important tasks get first pick of focus windows (using
+// real remaining capacity, not a fixed count), everything else fills day-boundary hours
+// around what's already placed. Tasks that genuinely don't fit are left unplaced and
+// surfaced honestly on the board rather than forced somewhere bad.
+function runAutoPlacement() {
+  const profiles = state.profiles;
+  const track = state.track;
+
+  // Score everything first
+  let scored = state.tasks.map(t => ({
+    ...t,
+    flag: isComplete(t, track, profiles) ? scoreTask(t, track, profiles) : null,
+  }));
+
+  // Only ACT/BLOCK/FLOW get placed on the timeline; FWD and CUT don't need a time.
+  const placeable = scored.filter(t => t.flag === "ACT" || t.flag === "BLOCK" || t.flag === "FLOW");
+  // Tasks landing here may carry stale scheduledTime/scheduledDay from a previous
+  // placement run (e.g. the person went back and changed an answer that flipped
+  // this task from ACT to FWD). Strip scheduling fields so they don't accidentally
+  // look "placed" on the board.
+  const rest = scored
+    .filter(t => !(t.flag === "ACT" || t.flag === "BLOCK" || t.flag === "FLOW"))
+    .map(t => ({ ...t, scheduledTime: "", scheduledDay: "", autoPlaced: false, unplaced: false }));
+
+  // Rank heaviest + most important first — these get first claim on focus windows and
+  // the earliest open slots generally.
+  const ranked = [...placeable].sort((a,b) => {
+    const fo = FLAG_ORDER.indexOf(a.flag) - FLAG_ORDER.indexOf(b.flag);
+    if (fo !== 0) return fo;
+    // Within the same flag, deadline urgency wins: today before tomorrow before later.
+    const da = a.scores.deadline ?? 0, db = b.scores.deadline ?? 0;
+    if (da !== db) return db - da; // higher deadline value = more urgent = earlier slot
+    // Same flag, same deadline: heavier/more important tasks get priority slots.
+    return taskWeight(b) - taskWeight(a);
+  });
+
+  const configuredDayStart = state.dayBounds?.start ? timeToMinutes(state.dayBounds.start) : 8*60;
+  const dayEnd = state.dayBounds?.end ? timeToMinutes(state.dayBounds.end) : 20*60;
+  const now = new Date();
+  const nowMins = now.getHours() * 60 + now.getMinutes();
+  const roundedNow = Math.ceil(nowMins / 10) * 10;
+  const dayStart = Math.max(configuredDayStart, roundedNow);
+
+  // Work/home split, if the person set one up. workStart/workEnd define "work hours";
+  // everything else inside the day (before work starts, and after work ends, up to
+  // day end) counts as "home hours" for placement-preference purposes.
+  const hasWorkSplit = state.workHoursChoice === "yes" && state.workHours?.start && state.workHours?.end;
+  const workStart = hasWorkSplit ? timeToMinutes(state.workHours.start) : null;
+  const workEnd = hasWorkSplit ? timeToMinutes(state.workHours.end) : null;
+
+  // Returns the [start, end] range a task's placement search should be confined to,
+  // based on its time preference. No preference (or no work split configured at all)
+  // means the full day, exactly as before this feature existed.
+  function preferenceRange(task) {
+    if (!hasWorkSplit) return [dayStart, dayEnd];
+    const pref = task.scores?.timePreference ?? 0;
+    if (pref === 1) return [Math.max(dayStart, workStart), Math.min(dayEnd, workEnd)]; // during work
+    if (pref === 2) {
+      // After work: the home period is whatever's left of the day outside work hours.
+      // If work ends before the day does, that's straightforwardly [workEnd, dayEnd].
+      // (Before-work home time exists too in theory, but "after work" specifically
+      // means the latter slice, so we don't also offer the morning sliver here.)
+      return [Math.max(dayStart, workEnd), dayEnd];
+    }
+    return [dayStart, dayEnd]; // no preference
+  }
+
+  const windows = (state.focusWindows || []).map(w => ({
+    start: timeToMinutes(w.start), end: timeToMinutes(w.end), remaining: 0,
+  })).filter(w => w.start != null && w.end != null);
+  windows.forEach(w => { w.remaining = Math.max(0, w.end - w.start); });
+
+  // Seed with today's fixed commitments before placing anything, so the algorithm
+  // never offers a slot that's already taken by a meeting or other immovable block.
+  const occupied = (state.fixedCommitments || [])
+    .map(c => ({ start: timeToMinutes(c.start), end: timeToMinutes(c.end) }))
+    .filter(o => o.start != null && o.end != null);
+  windows.forEach(w => {
+    const overlapMins = occupied
+      .filter(o => o.start < w.end && o.end > w.start)
+      .reduce((sum,o) => sum + (Math.min(o.end,w.end) - Math.max(o.start,w.start)), 0);
+    w.remaining = Math.max(0, w.remaining - overlapMins);
+  });
+  const placedTasks = [];
+  const unplaced = [];
+
+  for (const t of ranked) {
+    const dur = taskDuration(t);
+    let placedStart = null;
+    let placedInWindow = false;
+    const [prefStart, prefEnd] = preferenceRange(t);
+
+    const weight = taskWeight(t);
+    const wantsWindow = weight >= 5 && (t.flag === "ACT" || t.flag === "BLOCK");
+    if (wantsWindow) {
+      for (const w of windows) {
+        if (w.start < prefStart || w.end > prefEnd) continue;
+        if (w.remaining >= dur) {
+          const slot = findOpenSlot(w.start, w.end, dur, occupied.filter(o => o.start < w.end && o.end > w.start));
+          if (slot != null) {
+            placedStart = slot;
+            placedInWindow = true;
+            w.remaining -= dur;
+            break;
+          }
+        }
+      }
+    }
+
+    if (placedStart == null) {
+      placedStart = findOpenSlot(prefStart, prefEnd, dur, occupied);
+    }
+
+    if (placedStart == null) {
+      unplaced.push(t);
+      continue;
+    }
+
+    occupied.push({ start: placedStart, end: placedStart + dur + 15 });
+    placedTasks.push({ ...t, scheduledTime: minutesToTime(placedStart), scheduledDay: "Today", duration: dur, autoPlaced: true, placedInWindow });
+  }
+
+  const finalTasks = [...placedTasks, ...unplaced.map(t => ({ ...t, duration: taskDuration(t), unplaced: true })), ...rest];
+  setState({ tasks: finalTasks, autoPlanned: true, boardMode: "edit", step: "board" });
+}
+
+// ─── BOARD (auto-placed, editable) ───────────────────────────────────────────
+
+function screenBoard() {
+  // A task only belongs on the main timeline if it has a real scheduledTime AND its
+  // flag is one that's allowed to carry a time. FWD tasks should never have a time at
+  // all (delegating isn't about a slot in your day), so even a stale leftover time from
+  // a prior auto-placement run is ignored for them. CUT tasks legitimately gain a time
+  // only through the deliberate "move to another day" action, which is a real, intentional
+  // schedule, so they're allowed onto the timeline once that's set.
+  const placed = state.tasks.filter(t => t.flag !== "FWD" && t.scheduledTime && !t.unplaced);
+  const unplacedTasks = state.tasks.filter(t => t.unplaced);
+  const other = state.tasks.filter(t => t.flag === "FWD" || (t.flag === "CUT" && !t.scheduledTime) || (!["ACT","BLOCK","FLOW","FWD","CUT"].includes(t.flag) && !t.scheduledTime));
+
+  const DAY_ORDER = { "Today": 0, "Tomorrow": 1 };
+  DAYS.forEach((d,i) => { if (!(d in DAY_ORDER)) DAY_ORDER[d] = 2 + i; });
+  const sorted = state.manualOrder ? [...placed] : [...placed].sort((a,b) => {
+    const da = DAY_ORDER[a.scheduledDay || "Today"] ?? 99;
+    const db = DAY_ORDER[b.scheduledDay || "Today"] ?? 99;
+    if (da !== db) return da - db;
+    return (timeToMinutes(a.scheduledTime)||0) - (timeToMinutes(b.scheduledTime)||0);
+  });
+
+  const delegateTasks = other.filter(t => t.flag === "FWD");
+  const cutTasks = other.filter(t => t.flag === "CUT");
+
+  return `<div class="screen">
+    <button class="back-btn" onclick="setState({step:'fastscore', autoPlanned:false})">← Back to scoring</button>
+    <div class="eyebrow">${escHtml(state.userName)}'s day</div>
+    <h1 style="margin-bottom:6px">Here's your plan</h1>
+    <p class="sub">Tap edit on anything that doesn't look right.</p>
+
+    ${sorted.map((t,i) => {
+      const day = t.scheduledDay || "Today";
+      const prevDay = i > 0 ? (sorted[i-1].scheduledDay || "Today") : null;
+      const divider = (day !== prevDay) ? `<div class="divider-line light"><hr><span class="divider-label">${escHtml(day)}</span><hr></div>` : "";
+      return divider + renderBoardCard(t);
+    }).join("")}
+
+    ${unplacedTasks.length ? `
+      <div class="card" style="border-color:#F5C97A;background:#FEF8EE">
+        <div class="field-label" style="color:#7A4500;margin-bottom:8px">Couldn't find a slot</div>
+        ${unplacedTasks.map(t => `
+          <div style="margin-bottom:10px">
+            <div class="task-name-display" style="margin-bottom:6px;font-size:14px">${escHtml(t.name)}</div>
+            <button class="use-time-btn" onclick="openBoardEdit('${t.id}')">Place manually</button>
+          </div>`).join("")}
+      </div>` : ""}
+
+    ${delegateTasks.length ? `
+      <div class="divider-line light"><hr><span class="divider-label">Delegate</span><hr></div>
+      ${delegateTasks.map(t => renderOtherBoardCard(t)).join("")}` : ""}
+
+    ${cutTasks.length ? `
+      <div class="divider-line light"><hr><span class="divider-label">Not today</span><hr></div>
+      ${cutTasks.map(t => renderOtherBoardCard(t)).join("")}` : ""}
+
+    ${state.boardMode === "view" ? `
+      <button class="copy-btn" id="copy-btn" style="background:#1A1714;width:100%;padding:11px;margin-top:8px" onclick="copyBoardList()">Copy to clipboard</button>
+      <button class="add-task-btn" style="margin-top:10px;border-style:solid;color:#1A3A72;border-color:#1A3A72" onclick="setState({boardMode:'edit'})">Edit tasks</button>
+      <button class="add-task-btn" style="margin-top:10px;border-style:solid;color:#B08A6A" onclick="if(confirm('Clear this list and start over?'))startFresh()">Start a new list</button>
+    ` : `
+      <button class="primary-btn" style="margin-top:8px" onclick="setState({boardMode:'view'})">Save</button>
+      <button class="add-task-btn" style="margin-top:10px;border-style:solid;color:#B08A6A" onclick="if(confirm('Clear this list and start over?'))startFresh()">Start a new list</button>
+    `}
+    ${renderCopyFallback()}
+  </div>`;
+}
+
+function renderOtherBoardCard(t) {
+  if (t.flag === "FWD") {
+    const editing = state.editingTaskId === t.id || !t.delegateTo;
+    if (!editing) {
+      return `
+        <div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;gap:12px">
+          <span class="task-name-display" style="margin:0;font-size:14.5px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(t.name)}</span>
+          <div style="text-align:right;flex-shrink:0">
+            <div class="ranked-meta" style="margin:0;color:#9A9188">Delegate to</div>
+            <div class="ranked-meta" style="margin:0"><b style="color:#1A3A72">${escHtml(t.delegateTo)}</b></div>
+          </div>
+          <button class="use-time-btn" style="margin:0" onclick="setState({editingTaskId:'${t.id}'})">Edit</button>
+        </div>`;
+    }
+    return `
+      <div class="card" style="opacity:0.85">
+        <div class="task-num">Delegate</div>
+        <div class="task-name-display" style="margin-bottom:10px">${escHtml(t.name)}</div>
+        <input type="text" id="delegate-input-${t.id}" placeholder="Who gets this?" value="${t.delegateTo||""}" oninput="setTaskFieldQuiet('${t.id}','delegateTo',this.value)" style="margin-bottom:10px">
+        <button class="primary-btn" onclick="saveDelegate('${t.id}')">Save</button>
+      </div>`;
+  }
+
+  // CUT task: offer to move it to another day/time instead of leaving it dead-ended.
+  // Once both a day and time are set, this task naturally moves into the main
+  // timeline on the next render (screenBoard's "placed" filter just checks scheduledTime).
+  const reschedulingOpen = state.editingTaskId === t.id;
+  if (!reschedulingOpen) {
+    return `
+      <div class="card" style="opacity:0.7">
+        <div class="task-num">Not today</div>
+        <div class="task-name-display" style="margin-bottom:6px">${escHtml(t.name)}</div>
+        <button class="use-time-btn" onclick="openBoardEdit('${t.id}')">Move to tomorrow or another day</button>
+      </div>`;
+  }
+  return `
+    <div class="card">
+      <div class="task-name-display" style="margin-bottom:12px">${escHtml(t.name)}</div>
+      <div class="field-label">Day</div>
+      <select onchange="setTaskField('${t.id}','scheduledDay',this.value)" style="margin-bottom:10px">
+        <option value="">Pick a day</option>
+        ${["Tomorrow",...DAYS].map(d=>`<option value="${d}"${t.scheduledDay===d?" selected":""}>${d}</option>`).join("")}
+      </select>
+      <div class="field-label">Time</div>
+      <input type="time" value="${t.scheduledTime||""}" onchange="setTaskField('${t.id}','scheduledTime',this.value)" style="margin-bottom:12px">
+      <button class="primary-btn" ${(t.scheduledDay && t.scheduledTime) ? "" : "disabled"} onclick="setState({editingTaskId:null})">Done</button>
+    </div>`;
+}
+
+function renderBoardCard(task) {
+  const editing = state.editingTaskId === task.id;
+  const f = FLAGS[task.flag];
+  const isRescheduled = task.flag === "CUT"; // moved from "not today" rather than auto-placed with real effort/duration
+
+  if (!editing) {
+    if (isRescheduled) {
+      return `
+        <div class="card" data-id="${task.id}" style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;gap:12px;${task.done?"opacity:0.5;":""}" ${state.boardMode!=="view" ? `ondragover="boardDragOver(event,'${task.id}')" ondrop="boardDrop(event,'${task.id}')"` : ""}>
+          ${state.boardMode === "view"
+            ? `<button onclick="toggleTaskDone('${task.id}')" style="background:none;border:${task.done?"2px solid #9A9188":"2px solid #C4BAB0"};border-radius:50%;width:22px;height:22px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">${task.done ? `<span style="color:#9A9188;font-size:13px">✓</span>` : ""}</button>`
+            : `<span class="drag-handle" draggable="true" ondragstart="boardDragStart(event,'${task.id}')" ondragend="boardDragEnd(event)" ontouchstart="boardTouchStart(event,'${task.id}')" ontouchmove="boardTouchMove(event)" ontouchend="boardTouchEnd(event)">⠿</span>`
+          }
+          <span class="task-name-display" style="margin:0;font-size:14.5px;flex:1;min-width:0;word-break:break-word;${task.done?"text-decoration:line-through;color:#9A9188":""}">${escHtml(task.name)}</span>
+          <div style="text-align:right;flex-shrink:0">
+            <div class="ranked-meta" style="margin:0">${escHtml(task.scheduledDay||"")}</div>
+            <div class="ranked-meta" style="margin:0"><b style="color:#1A3A72">${formatTime12(task.scheduledTime)}</b></div>
+          </div>
+          ${state.boardMode !== "view" ? `<button class="use-time-btn" style="margin:0" onclick="openBoardEdit('${task.id}')">Edit</button>` : ""}
+        </div>`;
+    }
+    const range = taskTimeRange(task);
+    const wh = state.workHours;
+    const hasWorkHours = state.workHoursChoice === "yes" && wh && wh.start && wh.end;
+    const periodConflictMsg = (() => {
+      if (!hasWorkHours || !task.taskPeriod || !task.scheduledTime) return "";
+      const tMins = timeToMinutes(task.scheduledTime);
+      const wStart = timeToMinutes(wh.start);
+      const wEnd = timeToMinutes(wh.end);
+      const inWork = tMins != null && tMins >= wStart && tMins < wEnd;
+      if (task.taskPeriod === "work" && !inWork) {
+        // find next open work-hours slot
+        const dur = taskDuration(task) || 30;
+        const occupied = state.tasks
+          .filter(r => r.id !== task.id && r.scheduledTime && r.taskPeriod === "work")
+          .map(r => ({ s: timeToMinutes(r.scheduledTime), e: timeToMinutes(r.scheduledTime) + (taskDuration(r) || 30) }));
+        let slot = wStart;
+        let suggestion = null;
+        while (slot + dur <= wEnd) {
+          if (!occupied.some(o => slot < o.e && slot + dur > o.s)) {
+            suggestion = minutesToTime(slot);
+            break;
+          }
+          slot += 15;
+        }
+        return `<div class="collision-warning" style="margin-top:8px">${formatTime12(task.scheduledTime)} is outside your work hours (${formatTime12(wh.start)}–${formatTime12(wh.end)})${suggestion ? ". Try " + formatTime12(suggestion) + " instead" : ""}.</div>`;
+      }
+      if (task.taskPeriod === "personal" && inWork) {
+        return `<div class="collision-warning" style="margin-top:8px">Scheduled during work hours. Move it after ${formatTime12(wh.end)} to keep it personal.</div>`;
+      }
+      return "";
+    })();
+    const periodPills = hasWorkHours ? `
+      <div style="display:flex;gap:5px;margin-top:8px">
+        <button onclick="setTaskPeriod('${task.id}','work')" style="padding:2px 7px;border-radius:4px;border:${task.taskPeriod==='work'?"1px solid #378ADD;background:#E6F1FB;color:#042C53":"0.5px solid #C0B8AE;background:#fff;color:#9A9188"};font-size:10.5px;font-weight:700;cursor:pointer;font-family:inherit">Work</button>
+        <button onclick="setTaskPeriod('${task.id}','personal')" style="padding:2px 7px;border-radius:4px;border:${task.taskPeriod==='personal'?"1px solid #7F77DD;background:#EEEDFE;color:#26215C":"0.5px solid #C0B8AE;background:#fff;color:#9A9188"};font-size:10.5px;font-weight:700;cursor:pointer;font-family:inherit">Personal</button>
+      </div>` : "";
+    const isViewMode = state.boardMode === "view";
+    return `
+      <div class="card" data-id="${task.id}" style="padding:14px 18px;${task.done?"opacity:0.5;":""}" ${!isViewMode ? `ondragover="boardDragOver(event,'${task.id}')" ondrop="boardDrop(event,'${task.id}')"` : ""}>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+          ${isViewMode
+            ? `<button onclick="toggleTaskDone('${task.id}')" style="background:none;border:${task.done?"2px solid #9A9188":"2px solid #C4BAB0"};border-radius:50%;width:22px;height:22px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">${task.done ? `<span style="color:#9A9188;font-size:13px">✓</span>` : ""}</button>`
+            : `<span class="drag-handle" draggable="true" ondragstart="boardDragStart(event,'${task.id}')" ondragend="boardDragEnd(event)" ontouchstart="boardTouchStart(event,'${task.id}')" ontouchmove="boardTouchMove(event)" ontouchend="boardTouchEnd(event)">⠿</span>`
+          }
+          <div style="flex:1;min-width:0">
+            <div class="task-name-display" style="margin:0;font-size:14.5px;word-break:break-word;${task.done?"text-decoration:line-through;color:#9A9188":""}">${escHtml(task.name)}</div>
+            ${task.placedInWindow ? `<div style="font-size:10.5px;color:#1A3A72;margin-top:2px;letter-spacing:0.03em">Placed in focus window</div>` : ""}
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div class="ranked-meta" style="margin:0"><b style="color:#1A3A72">${range.start} - ${range.end}</b></div>
+            <div class="ranked-meta" style="margin:0;color:#A8862E">${durationLabel(taskDuration(task))}</div>
+          </div>
+          ${!isViewMode ? `<button class="use-time-btn" style="margin:0" onclick="openBoardEdit('${task.id}')">Edit</button>` : ""}
+        </div>
+        ${isViewMode ? "" : periodPills}
+        ${isViewMode ? "" : periodConflictMsg}
+      </div>`;
+  }
+
+  if (isRescheduled) {
+    return `
+      <div class="card">
+        <div style="margin-bottom:12px">
+          <span class="task-name-display" style="margin:0;font-size:14.5px">${escHtml(task.name)}</span>
+        </div>
+        <div class="field-label">Day</div>
+        <select onchange="setTaskField('${task.id}','scheduledDay',this.value)" style="margin-bottom:10px">
+          ${["Tomorrow",...DAYS].map(d=>`<option value="${d}"${task.scheduledDay===d?" selected":""}>${d}</option>`).join("")}
+        </select>
+        <div class="field-label">Time</div>
+        <input type="time" value="${task.scheduledTime||""}" onchange="setTaskField('${task.id}','scheduledTime',this.value)" style="margin-bottom:12px">
+        <button class="primary-btn" onclick="setState({editingTaskId:null})">Done</button>
+      </div>`;
+  }
+  return `
+    <div class="card">
+      <div style="margin-bottom:12px">
+        <span class="task-name-display" style="margin:0;font-size:14.5px">${escHtml(task.name)}</span>
+      </div>
+      <div class="field-label">Day</div>
+      <select onchange="setTaskField('${task.id}','scheduledDay',this.value)" style="margin-bottom:10px">
+        ${["Today","Tomorrow",...DAYS].map(d=>`<option value="${d}"${task.scheduledDay===d?" selected":""}>${d}</option>`).join("")}
+      </select>
+      <div class="field-label">Time</div>
+      <input type="time" value="${task.scheduledTime||""}" onchange="setTaskField('${task.id}','scheduledTime',this.value)" style="margin-bottom:10px">
+      <div class="field-label">Duration</div>
+      <select onchange="setTaskField('${task.id}','duration',this.value)" style="margin-bottom:12px">
+        ${DURATIONS.map(d=>`<option value="${d.mins}"${String(task.duration)===String(d.mins)?" selected":""}>${d.label}</option>`).join("")}
+      </select>
+      ${(() => {
+        const collisions = findAllCollisions(task);
+        if (!collisions.length) return "";
+        return collisions.map(c => {
+          if (c.type === "fixed") return `<div class="collision-warning">This clashes with "${escHtml(c.name)}" (${formatTime12(c.start)}–${formatTime12(c.end)}), which can't move.</div>`;
+          return `<div class="collision-warning">Overlaps with "${escHtml(c.name)}" (${formatTime12(c.scheduledTime)}${c.duration ? ` for ${durationLabel(c.duration)}` : ""})</div>`;
+        }).join("");
+      })()}
+      <button class="primary-btn" onclick="setState({editingTaskId:null})">Done</button>
+    </div>`;
+}
+
+function openBoardEdit(taskId) {
+  setState({ editingTaskId: taskId });
+}
+
+function toggleTaskDone(taskId) {
+  const tasks = state.tasks.map(t => t.id === taskId ? { ...t, done: !t.done } : t);
+  // Move done tasks to the bottom, preserving relative order within each group
+  const active = tasks.filter(t => !t.done);
+  const done = tasks.filter(t => t.done);
+  setState({ tasks: [...active, ...done] });
+}
+
+// ── Board drag-to-reorder ─────────────────────────────────────────────────────
+// Uses a module-level variable pattern so the drag state is isolated and doesn't
+// pollute the app's main state object (dragging is purely ephemeral UI).
+var boardDrag = {
+  srcId: null,       // task id of the card being dragged
+  overId: null,      // task id of the card currently hovered over
+  touchY: 0,         // last known Y position for touch drag
+};
+
+function boardDragStart(e, taskId) {
+  boardDrag.srcId = taskId;
+  // Give the browser one frame to capture the drag image before fading the element
+  var el = e.currentTarget.closest(".card");
+  if (el) setTimeout(function() { el.style.opacity = "0.45"; }, 0);
+  if (e.dataTransfer) e.dataTransfer.effectAllowed = "move";
+}
+
+function boardDragOver(e, taskId) {
+  e.preventDefault();
+  if (taskId === boardDrag.srcId) return;
+  if (boardDrag.overId !== taskId) {
+    // Remove highlight from previous target
+    document.querySelectorAll(".card.drag-over").forEach(function(el) { el.classList.remove("drag-over"); });
+    boardDrag.overId = taskId;
+    var el = document.querySelector(".card[data-id='" + taskId + "']");
+    if (el) el.classList.add("drag-over");
+  }
+}
+
+function boardDragEnd(e) {
+  // Restore opacity and clean up highlights regardless of whether drop succeeded
+  var src = document.querySelector(".card[data-id='" + boardDrag.srcId + "']");
+  if (src) src.style.opacity = "";
+  document.querySelectorAll(".card.drag-over").forEach(function(el) { el.classList.remove("drag-over"); });
+}
+
+function boardDrop(e, taskId) {
+  e.preventDefault();
+  boardDragEnd(e);
+  if (!boardDrag.srcId || boardDrag.srcId === taskId) { boardDrag.srcId = null; boardDrag.overId = null; return; }
+  var tasks = state.tasks.slice();
+  var fromIdx = tasks.findIndex(function(t) { return t.id === boardDrag.srcId; });
+  var toIdx   = tasks.findIndex(function(t) { return t.id === taskId; });
+  if (fromIdx === -1 || toIdx === -1) { boardDrag.srcId = null; boardDrag.overId = null; return; }
+  var moved = tasks.splice(fromIdx, 1)[0];
+  tasks.splice(toIdx, 0, moved);
+  boardDrag.srcId = null;
+  boardDrag.overId = null;
+  setState({ tasks: tasks, manualOrder: true });
+}
+
+// Touch fallback — translates touchstart/move/end into the same drag logic above
+function boardTouchStart(e, taskId) {
+  boardDrag.srcId = taskId;
+  boardDrag.touchY = e.touches[0].clientY;
+  var el = e.currentTarget.closest(".card");
+  if (el) el.style.opacity = "0.45";
+}
+
+function boardTouchMove(e) {
+  boardDrag.touchY = e.touches[0].clientY;
+  var el = document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY);
+  var card = el ? el.closest(".card[data-id]") : null;
+  var targetId = card ? card.getAttribute("data-id") : null;
+  if (targetId && targetId !== boardDrag.srcId && targetId !== boardDrag.overId) {
+    document.querySelectorAll(".card.drag-over").forEach(function(c) { c.classList.remove("drag-over"); });
+    boardDrag.overId = targetId;
+    card.classList.add("drag-over");
+  }
+}
+
+function boardTouchEnd(e) {
+  var dropId = boardDrag.overId;
+  document.querySelectorAll(".card.drag-over").forEach(function(c) { c.classList.remove("drag-over"); });
+  var src = document.querySelector(".card[data-id='" + boardDrag.srcId + "']");
+  if (src) src.style.opacity = "";
+  if (!dropId || dropId === boardDrag.srcId) { boardDrag.srcId = null; boardDrag.overId = null; return; }
+  var tasks = state.tasks.slice();
+  var fromIdx = tasks.findIndex(function(t) { return t.id === boardDrag.srcId; });
+  var toIdx   = tasks.findIndex(function(t) { return t.id === dropId; });
+  if (fromIdx === -1 || toIdx === -1) { boardDrag.srcId = null; boardDrag.overId = null; return; }
+  var moved = tasks.splice(fromIdx, 1)[0];
+  tasks.splice(toIdx, 0, moved);
+  boardDrag.srcId = null;
+  boardDrag.overId = null;
+  setState({ tasks: tasks, manualOrder: true });
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
+function setTaskPeriod(taskId, period) {
+  const tasks = state.tasks.map(t =>
+    t.id === taskId ? { ...t, taskPeriod: t.taskPeriod === period ? null : period } : t
+  );
+  setState({ tasks });
+}
+
+// Writes both a styled HTML version (time bold/blue, duration in light gold) and a
+// plain-text fallback to the clipboard. Apps that accept rich paste (Notes, Docs,
+// email) will show the styling; anything that only takes plain text gets the
+// plain version automatically, since both are offered together.
+let toastTimer = null;
+function showToast(message, isError) {
+  const el = document.getElementById("toast");
+  if (!el) return;
+  el.textContent = message;
+  el.classList.toggle("error", !!isError);
+  el.classList.add("show");
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.classList.remove("show"); }, 2400);
+}
+
+function writeStyledClipboard(plainLines, htmlLines, btnId, idleLabel) {
+  const plainText = plainLines.join("\n");
+  const htmlText = htmlLines.join("<br>");
+  let settled = false;
+  const succeed = () => {
+    if (settled) return;
+    settled = true;
+    showToast("Copied to clipboard");
+    const btn = document.getElementById(btnId);
+    if (btn) { btn.textContent="Copied!"; setTimeout(()=>{ btn.textContent=idleLabel; },2200); }
+  };
+  const fail = () => {
+    if (settled) return;
+    settled = true;
+    showCopyFallback(plainText);
+  };
+
+  // Some mobile browsers / webviews can hang on clipboard.write without ever
+  // resolving or rejecting (notably sandboxed iframes without clipboard-write
+  // permission), which would leave the user with no feedback at all. A hard
+  // timeout guarantees we always do something, and on failure we show the
+  // text directly so they can copy it manually rather than hitting a dead end.
+  const timeoutId = setTimeout(fail, 2500);
+
+  try {
+    if (navigator.clipboard && navigator.clipboard.write && window.ClipboardItem) {
+      const item = new ClipboardItem({
+        "text/plain": new Blob([plainText], {type:"text/plain"}),
+        "text/html": new Blob([htmlText], {type:"text/html"}),
+      });
+      navigator.clipboard.write([item]).then(() => { clearTimeout(timeoutId); succeed(); }).catch(() => {
+        navigator.clipboard.writeText(plainText).then(() => { clearTimeout(timeoutId); succeed(); }).catch(() => { clearTimeout(timeoutId); fail(); });
+      });
+    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(plainText).then(() => { clearTimeout(timeoutId); succeed(); }).catch(() => { clearTimeout(timeoutId); fail(); });
+    } else {
+      clearTimeout(timeoutId);
+      fail();
+    }
+  } catch (e) {
+    clearTimeout(timeoutId);
+    fail();
+  }
+}
+
+function showCopyFallback(text) {
+  setState({ copyFallbackText: text });
+}
+
+function renderCopyFallback() {
+  if (state.copyFallbackText == null) return "";
+  return `
+    <div class="copy-fallback-overlay" onclick="if(event.target===this)setState({copyFallbackText:null})">
+      <div class="copy-fallback-sheet">
+        <div class="eyebrow">Couldn't copy automatically</div>
+        <h1 style="font-size:18px;margin-bottom:8px">Copy this manually</h1>
+        <p class="sub">Tap the box below to select everything, then copy it the usual way.</p>
+        <textarea id="copy-fallback-textarea" class="copy-fallback-text" readonly onclick="this.select()">${escHtml(state.copyFallbackText)}</textarea>
+        <button class="primary-btn" onclick="setState({copyFallbackText:null})">Done</button>
+      </div>
+    </div>`;
+}
+
+function copyBoardList() {
+  const placed = state.tasks
+    .filter(t => t.flag !== "FWD" && t.scheduledTime && !t.unplaced)
+    .sort((a,b) => (timeToMinutes(a.scheduledTime)||0) - (timeToMinutes(b.scheduledTime)||0));
+  const plainLines = [];
+  const htmlLines = [];
+  placed.forEach(t => {
+    const range = taskTimeRange(t);
+    if (t.flag === "CUT") {
+      // Rescheduled task: day + time only, no duration was ever collected for these.
+      plainLines.push(`${t.name} - ${t.scheduledDay||""} | ${range.start}`);
+      htmlLines.push(`${escHtml(t.name)} - ${escHtml(t.scheduledDay||"")} | <b style="color:#1A3A72">${range.start}</b>`);
+    } else {
+      const dur = durationLabel(taskDuration(t));
+      plainLines.push(`${t.name} - ${t.scheduledDay||"Today"} | ${range.start} - ${range.end} (${dur})`);
+      htmlLines.push(`${escHtml(t.name)} - ${escHtml(t.scheduledDay||"Today")} | <b style="color:#1A3A72">${range.start} - ${range.end}</b> <span style="color:#A8862E">(${dur})</span>`);
+    }
+  });
+
+  const delegateTasks = state.tasks.filter(t => t.flag === "FWD");
+  if (delegateTasks.length) {
+    plainLines.push("");
+    htmlLines.push("");
+    delegateTasks.forEach(t => {
+      const who = t.delegateTo ? `to ${t.delegateTo}` : "not assigned yet";
+      plainLines.push(`[DELEGATE] ${t.name} (${who})`);
+      htmlLines.push(`[DELEGATE] ${escHtml(t.name)} (${escHtml(who)})`);
+    });
+  }
+
+  const unplacedTasks = state.tasks.filter(t => t.unplaced);
+  if (unplacedTasks.length) {
+    plainLines.push("");
+    htmlLines.push("");
+    unplacedTasks.forEach(t => {
+      plainLines.push(`[UNPLACED] ${t.name}`);
+      htmlLines.push(`[UNPLACED] ${escHtml(t.name)}`);
+    });
+  }
+  writeStyledClipboard(plainLines, htmlLines, "copy-btn", "Copy plan");
+}
+
+function escHtml(s) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+function removeTask(id) { setState({ tasks: state.tasks.filter(t => t.id !== id) }); }
+
+// ─── RANKED LIST ─────────────────────────────────────────────────────────────
+
+function renderRankedList(ranked, capacity) {
+  const cap = capacity ?? ranked.length;
+  let rowsHtml = "";
+  ranked.forEach((t, i) => {
+    const f = FLAGS[t.flag];
+    const isCut = t.flag === "CUT";
+    let rightHtml = "";
+    if ((t.flag==="ACT" || t.flag==="BLOCK" || t.flag==="FLOW") && t.scheduledTime) {
+      const dayPart = taskDayKey(t, state.profiles);
+      const range = taskTimeRange(t);
+      rightHtml = `
+        <div style="text-align:right;flex-shrink:0">
+          ${dayPart ? `<div class="ranked-meta" style="margin:0">${escHtml(dayPart)}</div>` : ""}
+          <div class="ranked-meta" style="margin:0"><b style="color:#1A3A72">${range.start} - ${range.end}</b></div>
+          <div class="ranked-meta" style="margin:0;color:#A8862E">${durationLabel(taskDuration(t))}</div>
+        </div>`;
+    }
+    if (t.flag==="FWD" && t.delegateTo) {
+      rightHtml = `<div class="ranked-meta" style="text-align:right;flex-shrink:0">to: ${escHtml(t.delegateTo)}</div>`;
+    }
+
+    if (i === cap) {
+      rowsHtml += `<div class="divider-line"><hr><span class="divider-label">Tomorrow and beyond</span><hr></div>`;
+    }
+    rowsHtml += `
+      <div class="ranked-row" style="${i>=cap?"opacity:0.5":""}${i>0&&i!==cap?";border-top:1px solid rgba(242,239,232,0.07)":""}">
+        ${flagBadge(t.flag, true)}
+        <div style="flex:1;min-width:0">
+          <div class="ranked-name${isCut?" cut":""}">${escHtml(t.name||"Untitled")}</div>
+          ${t.isTriage ? `<div class="ranked-triage">Added mid-day</div>` : ""}
+        </div>
+        ${rightHtml}
+      </div>`;
+  });
+
+  const displacedHtml = state.displaced.length > 0
+    ? `<div class="displaced-notice">${state.displaced.map(t=>escHtml(t.name)).join(", ")} ${state.displaced.length===1?"was":"were"} pushed past today's capacity by the new task.</div>`
+    : "";
+
+  return `
+    <div class="ranked-panel">
+      <div class="ranked-header">
+        <span class="ranked-eyebrow">Your priority order</span>
+        <button class="copy-btn" id="copy-btn" onclick="copyList()">Copy list</button>
+      </div>
+      ${displacedHtml}
+      ${rowsHtml}
+      <button class="add-task-btn" onclick="setState({showTriage:true})">+ Something just came up</button>
+    </div>
+    ${renderCopyFallback()}`;
+}
+
+// Builds a sortable schedule of tasks that have a day + time set, ordered chronologically.
+// Tasks without both a day and a time are excluded from the schedule (CUT tasks excluded entirely).
+function buildSchedule(tasks, profiles) {
+  const dayOrderIndex = { "Today": 0, "Tomorrow": 1 };
+  DAYS.forEach((d,i) => { if (!(d in dayOrderIndex)) dayOrderIndex[d] = 2 + i; });
+
+  return tasks
+    .filter(t => t.flag !== "CUT" && t.flag !== "FWD")
+    .map(t => ({ task: t, day: taskDayKey(t, profiles), minutes: timeToMinutes(t.scheduledTime) }))
+    .filter(x => x.day && x.minutes != null)
+    .sort((a,b) => {
+      const da = dayOrderIndex[a.day] ?? 99;
+      const db = dayOrderIndex[b.day] ?? 99;
+      if (da !== db) return da - db;
+      return a.minutes - b.minutes;
+    });
+}
+
+function formatTime12(t) {
+  if (!t) return "";
+  const [h,m] = t.split(":").map(Number);
+  return formatMinutes12(h*60+m);
+}
+
+function formatMinutes12(totalMins) {
+  const h = Math.floor(totalMins/60) % 24, m = totalMins % 60;
+  const period = h >= 12 ? "PM" : "AM";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${String(m).padStart(2,"0")}${period}`;
+}
+
+// Returns {start, end} display strings for a task's scheduled time + duration,
+// e.g. start="9:00AM", end="10:00AM". Falls back to just the start time if
+// duration is unavailable.
+function taskTimeRange(task) {
+  const startMins = timeToMinutes(task.scheduledTime);
+  if (startMins == null) return { start: "", end: "" };
+  const dur = taskDuration(task);
+  const start = formatMinutes12(startMins);
+  const end = formatMinutes12(startMins + dur);
+  return { start, end };
+}
+
+function copyList() {
+  const ranked = rankTasks(state.tasks, state.track, state.profiles);
+  const profiles = state.profiles;
+
+  const scheduled = buildSchedule(ranked, profiles);
+  const unscheduled = ranked.filter(t => !scheduled.find(x => x.task.id === t.id));
+
+  const plainLines = [];
+  const htmlLines = [];
+
+  scheduled.forEach(({task, day}) => {
+    const name = task.name || "Untitled";
+    const range = taskTimeRange(task);
+    const dur = durationLabel(taskDuration(task));
+    plainLines.push(`${name} - ${day} | ${range.start} - ${range.end} (${dur})`);
+    htmlLines.push(`${escHtml(name)} - ${escHtml(day)} | <b style="color:#1A3A72">${range.start} - ${range.end}</b> <span style="color:#A8862E">(${dur})</span>`);
+  });
+
+  if (unscheduled.length) {
+    if (scheduled.length) { plainLines.push(""); htmlLines.push(""); }
+    unscheduled.forEach(t => {
+      const f = FLAGS[t.flag];
+      const isCut = t.flag === "CUT";
+      const name = t.name || "Untitled";
+      let extra = "";
+      if (t.flag === "FWD" && t.delegateTo) extra = `, to: ${t.delegateTo}`;
+      const display = isCut ? `~~${name}~~` : name;
+      plainLines.push(`[${t.flag}] ${display} (${f.label})${extra}`);
+      htmlLines.push(`[${t.flag}] ${isCut ? `<s>${escHtml(name)}</s>` : escHtml(name)} (${f.label})${escHtml(extra)}`);
+    });
+  }
+
+  const plainText = plainLines.join("\n");
+  const htmlText = htmlLines.join("<br>");
+  let settled = false;
+  const succeed = () => {
+    if (settled) return;
+    settled = true;
+    showToast("Copied to clipboard");
+    const btn = document.getElementById("copy-btn");
+    if (btn) { btn.textContent="Copied!"; btn.classList.add("done"); setTimeout(()=>{ btn.textContent="Copy list"; btn.classList.remove("done"); },2200); }
+  };
+  const fail = () => {
+    if (settled) return;
+    settled = true;
+    showCopyFallback(plainText);
+  };
+  const timeoutId = setTimeout(fail, 2500);
+  try {
+    if (navigator.clipboard && navigator.clipboard.write && window.ClipboardItem) {
+      const item = new ClipboardItem({
+        "text/plain": new Blob([plainText], {type:"text/plain"}),
+        "text/html": new Blob([htmlText], {type:"text/html"}),
+      });
+      navigator.clipboard.write([item]).then(() => { clearTimeout(timeoutId); succeed(); }).catch(() => {
+        navigator.clipboard.writeText(plainText).then(() => { clearTimeout(timeoutId); succeed(); }).catch(() => { clearTimeout(timeoutId); fail(); });
+      });
+    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(plainText).then(() => { clearTimeout(timeoutId); succeed(); }).catch(() => { clearTimeout(timeoutId); fail(); });
+    } else {
+      clearTimeout(timeoutId);
+      fail();
+    }
+  } catch (e) {
+    clearTimeout(timeoutId);
+    fail();
+  }
+}
+
+// ─── TRIAGE ──────────────────────────────────────────────────────────────────
+
+let triageState = { name:"", urgency:null, delegate:null, swap:null, gradeWeight:null, careerVal:null, dependency:null };
+
+function setTriage(key,val) {
+  triageState[key] = val;
+  renderTriageOnly();
+}
+
+function handleTriageNameInput(val) {
+  triageState.name = val;
+  const btn = document.getElementById("triage-submit-btn");
+  if (btn) {
+    const ts = triageState;
+    const profiles = state.profiles;
+    const isStudent_ = isStudent(profiles);
+    const ownerOnly = ts.delegate === 1;
+    const step2Done = ts.urgency != null && ts.delegate != null;
+    const swapDone = isStudent_ ? (ts.gradeWeight != null && ts.careerVal != null) : ts.swap != null;
+    const ready = val.trim() && step2Done && (ownerOnly ? swapDone : true);
+    btn.disabled = !ready;
+  }
+}
+
+function renderTriageOnly() {
+  const el = document.getElementById("triage-sheet");
+  if (el) el.innerHTML = triageSheetHtml();
+}
+
+function triageSheetHtml() {
+  const ts = triageState;
+  const profiles = state.profiles;
+  const isStudent_ = isStudent(profiles);
+  const sw = PROFILE_SWAP[profiles[0]] || PROFILE_SWAP["employee"];
+  const canDelegate = ts.delegate === 2;
+  const ownerOnly = ts.delegate === 1;
+  const step2Done = ts.urgency != null && ts.delegate != null;
+
+  const swapDone = isStudent_ ? (ts.gradeWeight != null && ts.careerVal != null) : ts.swap != null;
+  const ready = ts.name.trim() && step2Done && (ownerOnly ? swapDone : true);
+
+  let swapHtml = "";
+  if (ownerOnly && step2Done) {
+    if (isStudent_) {
+      swapHtml += qHtmlTriage("gradeWeight", STUDENT_Q1.q, STUDENT_Q1.opts, ts.gradeWeight);
+      swapHtml += qHtmlTriage("careerVal",   STUDENT_Q2.q, STUDENT_Q2.opts, ts.careerVal);
+    } else {
+      swapHtml += qHtmlTriage("swap", sw.q, sw.opts, ts.swap);
+    }
+  }
+
+  let depHtml = "";
+  if (ownerOnly && swapDone) {
+    depHtml = qHtmlTriage("dependency", "Does this affect other tasks on your list?", ["No, it stands alone","Something must happen before this","Other tasks are waiting on this"], ts.dependency);
+  }
+
+  return `
+    <div class="triage-header">
+      <div>
+        <div class="eyebrow">Something just came up</div>
+        <h1 style="font-size:18px">Where does this fit?</h1>
+      </div>
+      <button class="close-btn" onclick="setState({showTriage:false,displaced:[]})">×</button>
+    </div>
+    <div style="margin-bottom:16px">
+      <div class="field-label">What is it?</div>
+      <input type="text" id="triage-name-input" placeholder="Name the task briefly" value="${escHtml(ts.name)}" oninput="handleTriageNameInput(this.value)" style="font-family:Georgia,serif;font-size:14px;font-weight:600;border:1.5px solid #E4DDD2">
+    </div>
+    ${qHtmlTriage("urgency","How urgent is this?",["No real deadline","Due soon","Due today"],ts.urgency)}
+    ${qHtmlTriage("delegate","Can someone else handle this?",["No, it has to be me","Yes, I can pass it on"],ts.delegate)}
+    ${swapHtml}
+    ${depHtml}
+    <button class="primary-btn" id="triage-submit-btn" style="margin-top:8px" ${ready?"":"disabled"} onclick="addTriageTask()">${ready?"Add to my list":"Fill in the answers above"}</button>`;
+}
+
+function qHtmlTriage(key, question, options, value) {
+  return `<div class="q-wrap">
+    <div class="q-label">${question}</div>
+    ${options.map((opt,i)=>`<button class="opt-btn${value===i+1?" active":""}" onclick="setTriage('${key}',${i+1})">${opt}</button>`).join("")}
+  </div>`;
+}
+
+function triageFlag() {
+  const ts = triageState;
+  const profiles = state.profiles;
+  const isStudent_ = isStudent(profiles);
+  const canDelegate = ts.delegate === 2;
+  const urgent = ts.urgency === 3;
+
+  if (canDelegate) return "FWD";
+
+  let swapScore;
+  if (isStudent_) {
+    swapScore = Math.round(((ts.gradeWeight??1) + (ts.careerVal??1)) / 2);
+  } else {
+    swapScore = ts.swap ?? 2;
+  }
+
+  if (urgent) return swapScore >= 2 ? "ACT" : "BLOCK";
+  if (swapScore === 3) return "ACT";
+  if (swapScore === 2) return "FLOW";
+  return "CUT";
+}
+
+function addTriageTask() {
+  const ts = triageState;
+  if (!ts.name.trim()) return;
+  const flag = triageFlag();
+  const profiles = state.profiles;
+
+  const deadlineVal = ts.urgency === 3 ? (isStudent(profiles) ? 5 : 4) : ts.urgency === 2 ? 2 : 1;
+
+  const newTask = {
+    id: uid(),
+    name: ts.name.trim(),
+    scores: { deadline: deadlineVal, delegate: ts.delegate, swap: ts.swap??2, gradeWeight: ts.gradeWeight, careerVal: ts.careerVal, dependency: ts.dependency??1 },
+    flag,
+    isTriage: true,
+    scheduledTime:"", scheduledDay:"", duration:"", delegateTo:"",
+  };
+
+  const beforeRanked = rankTasks(state.tasks, state.track, profiles);
+  const allTasks = [...state.tasks, newTask];
+  const afterRanked = rankTasks(allTasks, state.track, profiles);
+  const cap = state.capacity;
+  let displaced = [];
+  if (cap != null) {
+    const beforeIds = beforeRanked.slice(0,cap).map(t=>t.id);
+    const afterIds  = afterRanked.slice(0,cap).map(t=>t.id);
+    const bumpedIds = beforeIds.filter(id=>!afterIds.includes(id));
+    displaced = state.tasks.filter(t=>bumpedIds.includes(t.id));
+  }
+
+  triageState = { name:"", urgency:null, delegate:null, swap:null, gradeWeight:null, careerVal:null, dependency:null };
+  setState({ tasks: allTasks, showTriage: false, displaced });
+}
+
+// ─── LEGEND ──────────────────────────────────────────────────────────────────
+
+function renderLegend() {
+  const bodyHtml = Object.values(FLAGS).map(f=>`
+    <div class="legend-row">
+      ${flagBadge(f.code)}
+      <div>
+        <div style="font-size:13px;font-weight:700;color:#1A1714;margin-bottom:2px">${f.label}</div>
+        <div style="font-size:12px;color:#9A9188;line-height:1.45">${FLAG_DESCS[f.code]}</div>
+      </div>
+    </div>`).join("");
+
+  return `
+    <div class="legend-wrap">
+      <button class="legend-toggle" onclick="setState({legendOpen:${!state.legendOpen}})">
+        <span style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#9A9188">What the flags mean</span>
+        <span style="font-size:14px;color:#9A9188;transform:${state.legendOpen?"rotate(180deg)":"none"};display:inline-block;transition:transform 0.2s">↓</span>
+      </button>
+      ${state.legendOpen ? `<div class="legend-body">${bodyHtml}</div>` : ""}
+    </div>`;
+}
+
+// ─── SCREENS ─────────────────────────────────────────────────────────────────
+
+function screenName() {
+  return `<div class="screen">
+    <div class="eyebrow">Priority calculator</div>
+    <h1>What's your name?</h1>
+    <p class="sub">We'll use it to make this feel a little more personal.</p>
+    <input class="name-input" type="text" id="name-input" placeholder="Your name" value="${escHtml(state.userName)}"
+      oninput="handleNameInput(this.value)"
+      onkeydown="if(event.key==='Enter'&&state.userName.trim())setState({step:'track'})">
+    <button class="primary-btn" id="name-continue-btn" ${state.userName.trim()?"":"disabled"} onclick="setState({step:'track'})">Continue</button>
+  </div>`;
+}
+
+function handleNameInput(val) {
+  state.userName = val;
+  const btn = document.getElementById("name-continue-btn");
+  if (btn) btn.disabled = !val.trim();
+}
+
+function screenTrack() {
+  const opts = [
+    { id:"fast", label:"Fast track",  desc:"Type or paste your tasks, answer 3 quick taps each, and let the tool lay out your day." },
+    { id:"deep", label:"Deep dive",   desc:"Up to 8 questions per task. Best for your morning planning or when the stakes are high." },
+  ];
+  const nextStep = state.track === "fast" ? "setup" : "profile";
+  return `<div class="screen">
+    <div class="eyebrow">Priority calculator</div>
+    <h1>How do you want to work through your list?</h1>
+    <p class="sub">Pick the one that matches how much time and headspace you have right now.</p>
+    ${opts.map(o=>`
+      <button class="track-btn${state.track===o.id?" selected":""}${o.id==='deep' ? " disabled-look" : ""}" onclick="${o.id==='deep' ? "showToast('Deep Dive coming soon')" : "setState({track:'"+o.id+"'})"}">
+        <div class="track-btn-title">${o.label}</div>
+        <div class="track-btn-desc">${o.desc}</div>
+      </button>`).join("")}
+    <div style="margin-top:16px;margin-bottom:4px">
+      <label style="font-size:11px;font-weight:700;color:#9A9188;text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:6px">Your name (optional)</label>
+      <input class="dump-input" type="text" id="name-input" placeholder="So we can personalise your list" value="${escHtml(state.userName)}"
+        oninput="handleNameInput(this.value)" style="width:100%;box-sizing:border-box">
+    </div>
+    <button class="primary-btn" ${state.track?"":"disabled"} style="margin-top:16px" onclick="setState({step: state.track==='fast' ? 'setup' : 'profile'})">Continue</button>
+  </div>`;
+}
+function screenSetup() {
+  const open = state.setupOpenSections || {};
+  const fw = state.focusWindows || [];
+  const bounds = state.dayBounds || {};
+  const wh = state.workHours || {};
+  const fc = state.fixedCommitments || [];
+  const brk = state.breakTime || {};
+
+  const BREAK_DURATIONS = [
+    {mins:15,label:"15 min"},{mins:20,label:"20 min"},{mins:30,label:"30 min"},
+    {mins:45,label:"45 min"},{mins:60,label:"1 hour"},
+  ];
+
+  // Build a human-readable summary for each section for when it's collapsed.
+  const fwSummary = fw.length
+    ? fw.map((w,i)=>`${WINDOW_RANK_LABELS[i]||"Window"}: ${formatTime12(w.start)}–${formatTime12(w.end)}`).join(", ")
+    : null;
+  const boundsSummary = bounds.start && bounds.end
+    ? `${formatTime12(bounds.start)} – ${formatTime12(bounds.end)}${state.workHoursChoice==="yes"&&wh.start&&wh.end ? `, work ${formatTime12(wh.start)}–${formatTime12(wh.end)}` : ""}`
+    : null;
+  const fcSummary = (() => {
+    const items = fc.filter(c=>!c.isBreak);
+    const hasBreak = brk.start && brk.duration;
+    const parts = items.slice(0,2).map(c=>c.name||"Commitment");
+    if (items.length > 2) parts.push(`+${items.length-2} more`);
+    if (hasBreak) parts.push(`Break at ${formatTime12(brk.start)}`);
+    return parts.length ? parts.join(", ") : null;
+  })();
+
+  function sectionHeader(key, label, summary, iconOpen, iconClosed) {
+    const isOpen = open[key];
+    return `<button onclick="toggleSetupSection('${key}')" style="width:100%;display:flex;justify-content:space-between;align-items:center;background:transparent;border:none;cursor:pointer;padding:14px 18px;text-align:left">
+      <div>
+        <div style="font-size:14px;font-weight:700;color:#1A1714">${label}</div>
+        ${summary && !isOpen ? `<div style="font-size:12px;color:#1A3A72;margin-top:2px">${escHtml(summary)}</div>` : ""}
+        ${!summary && !isOpen ? `<div style="font-size:12px;color:#9A9188;margin-top:2px">Not set</div>` : ""}
+      </div>
+      <span style="font-size:18px;color:#9A9188;transform:${isOpen?"rotate(180deg)":"none"};display:inline-block;transition:transform 0.2s">↓</span>
+    </button>`;
+  }
+
+  // Focus windows section body
+  let fwBody = "";
+  if (open.focusWindows) {
+    const count = state.focusWindowCount || (fw.length || 1);
+    const windows = fw.length ? fw : Array.from({length:1},()=>({start:"",end:""}));
+    fwBody = `<div style="padding:0 18px 16px">
+      <div style="font-size:12px;color:#9A9188;margin-bottom:12px">The times when you focus best. Heaviest tasks get placed here first.</div>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        ${[1,2,3].map(n=>`<button class="hat-pill${count===n?" active":""}" onclick="setFocusWindowCount(${n})">${n} window${n>1?"s":""}</button>`).join("")}
+      </div>
+      ${Array.from({length:count},(_,i)=>{
+        const w = windows[i]||{start:"",end:""};
+        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span style="font-size:11px;color:#9A9188;width:70px;flex-shrink:0">${WINDOW_RANK_LABELS[i]||"Window "+(i+1)}</span>
+          <input type="time" value="${w.start}" onchange="setFocusWindowField(${i},'start',this.value)">
+          <span style="font-size:12px;color:#9A9188">to</span>
+          <input type="time" value="${w.end}" onchange="setFocusWindowField(${i},'end',this.value)">
+        </div>`;
+      }).join("")}
+    </div>`;
+  }
+
+  // Day bounds + work split section body
+  let boundsBody = "";
+  if (open.dayBounds) {
+    boundsBody = `<div style="padding:0 18px 16px">
+      <div style="font-size:12px;color:#9A9188;margin-bottom:12px">We'll only schedule tasks between these times.</div>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+        <span style="font-size:12px;color:#9A9188;flex-shrink:0">Day starts</span>
+        <input type="time" value="${bounds.start||""}" onchange="setDayBoundsField('start',this.value)">
+        <span style="font-size:12px;color:#9A9188;flex-shrink:0">winds down</span>
+        <input type="time" value="${bounds.end||""}" onchange="setDayBoundsField('end',this.value)">
+      </div>
+      <div style="font-size:12px;color:#9A9188;margin-bottom:8px">Does your day split into work time and personal time?</div>
+      <div class="hat-pills" style="margin-bottom:${state.workHoursChoice==="yes"?"10px":"0"}">
+        <button class="hat-pill${state.workHoursChoice==="yes"?" active":""}" onclick="setState({workHoursChoice:'yes'})">Yes, it splits</button>
+        <button class="hat-pill${state.workHoursChoice==="skip"?" active":""}" onclick="setState({workHoursChoice:'skip',workHours:null})">No</button>
+      </div>
+      ${state.workHoursChoice==="yes" ? `
+        <div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap">
+          <span style="font-size:12px;color:#9A9188;flex-shrink:0">Work hours</span>
+          <input type="time" value="${wh.start||""}" onchange="setWorkHoursField('start',this.value)">
+          <span style="font-size:12px;color:#9A9188;flex-shrink:0">to</span>
+          <input type="time" value="${wh.end||""}" onchange="setWorkHoursField('end',this.value)">
+        </div>` : ""}
+    </div>`;
+  }
+
+  // Fixed commitments + break section body
+  let fcBody = "";
+  if (open.fixedCommitments) {
+    const list = fc.filter(c=>!c.isBreak);
+    const displayList = list.length ? list : [makeFixedCommitment()];
+    fcBody = `<div style="padding:0 18px 16px">
+      <div style="font-size:12px;color:#9A9188;margin-bottom:12px">Meetings, calls, anything with a fixed time. We won't schedule over these.</div>
+      ${displayList.map((c,i)=>`
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+          <input type="text" placeholder="e.g. Team standup" value="${escHtml(c.name)}" id="fc-name-${i}"
+            oninput="setFixedCommitmentFieldQuiet(${i},'name',this.value)" onblur="commitFixedCommitmentField(${i},'name',this.value)"
+            style="flex:1;min-width:120px">
+          <input type="time" value="${c.start}" onchange="setFixedCommitmentField(${i},'start',this.value)">
+          <span style="font-size:12px;color:#9A9188">to</span>
+          <input type="time" value="${c.end}" onchange="setFixedCommitmentField(${i},'end',this.value)">
+          ${displayList.length>1?`<button class="remove-btn" onclick="removeFixedCommitment(${i})">×</button>`:""}
+        </div>`).join("")}
+      ${list.length < MAX_FIXED_COMMITMENTS ? `<button class="add-task-btn" style="margin-bottom:12px" onclick="addFixedCommitment()">+ Add another</button>` : ""}
+      <div style="margin-top:8px;padding-top:12px;border-top:1px solid #F0EBE3">
+        <div style="font-size:12px;font-weight:700;color:#1A1714;margin-bottom:8px">When do you want to take a break today?</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input type="time" value="${brk.start||""}" onchange="setBreakField('start',this.value)">
+          <select onchange="setBreakField('duration',this.value)" style="margin-bottom:0">
+            <option value="">How long?</option>
+            ${BREAK_DURATIONS.map(d=>`<option value="${d.mins}"${String(brk.duration)===String(d.mins)?" selected":""}>${d.label}</option>`).join("")}
+          </select>
+          ${brk.start&&brk.duration?`<button class="remove-btn" onclick="clearBreak()">×</button>`:""}
+        </div>
+      </div>
+    </div>`;
+  }
+
+  return `<div class="screen">
+    <button class="back-btn" onclick="setState({step:'track'})">← Back</button>
+    <div class="eyebrow">Optional setup</div>
+    <h1>Help us plan smarter</h1>
+    <p class="sub">All optional. Fill in what you know, skip the rest. You can update these any time.</p>
+    <div class="card" style="padding:0;overflow:hidden;margin-bottom:10px">
+      ${sectionHeader("focusWindows","Focus windows",fwSummary)}
+      ${fwBody || ""}
+    </div>
+    <div class="card" style="padding:0;overflow:hidden;margin-bottom:10px">
+      ${sectionHeader("dayBounds","Day boundaries & work hours",boundsSummary)}
+      ${boundsBody || ""}
+    </div>
+    <div class="card" style="padding:0;overflow:hidden;margin-bottom:20px">
+      ${sectionHeader("fixedCommitments","Fixed commitments & break",fcSummary)}
+      ${fcBody || ""}
+    </div>
+    <button class="primary-btn" id="setup-continue-btn" onclick="setTimeout(confirmSetup,0)">Continue</button>
+  </div>`;
+}
+
+function toggleSetupSection(key) {
+  const current = state.setupOpenSections || {};
+  const isOpening = !current[key];
+  const patch = { setupOpenSections: { ...current, [key]: isOpening } };
+  if (key === "fixedCommitments" && isOpening && !(state.fixedCommitments || []).filter(c=>!c.isBreak).length) {
+    patch.fixedCommitments = [makeFixedCommitment()];
+  }
+  setState(patch);
+}
+
+function confirmSetup() {
+  // Merge any break entry into the fixed commitments list, same as confirmFixedCommitments does.
+  const cleaned = (state.fixedCommitments || []).filter(c => !c.isBreak && c.name.trim() && c.start && c.end);
+  const brk = state.breakTime;
+  if (brk?.start && brk?.duration) {
+    const breakMins = Number(brk.duration);
+    const breakStart = timeToMinutes(brk.start);
+    if (breakStart != null && breakMins > 0) {
+      cleaned.push({ id: uid(), name: "Break", start: brk.start, end: minutesToTime(breakStart + breakMins), isBreak: true });
+    }
+  }
+  setState({ fixedCommitments: cleaned, step: "entrymethod" });
+}
+
+function screenProfile() {
+  const maxed = state.profiles.length >= 3;
+  return `<div class="screen">
+    <button class="back-btn" onclick="setState({step:'track'})">← Back</button>
+    <div class="eyebrow">Step 2 of 6</div>
+    <h1>Which of these are you?</h1>
+    <p class="sub">Select up to 3 roles. If you wear more than one hat, pick the ones that cover most of your list today.</p>
+    ${PROFILES.map(p=>{
+      const sel = state.profiles.includes(p.id);
+      const grey = maxed && !sel;
+      return `<button class="profile-btn${sel?" selected":grey?" maxed":""}" onclick="toggleProfile('${p.id}')">
+        ${escHtml(p.label)}
+        ${sel?`<span>✓</span>`:""}
+      </button>`;
+    }).join("")}
+    ${maxed?`<p style="font-size:12px;color:#9A9188;text-align:center;margin-bottom:16px">3 roles selected. Deselect one to change it.</p>`:""}
+    <button class="primary-btn" ${state.profiles.length>0?"":"disabled"} onclick="setState({step:'focus'})">Continue</button>
+  </div>`;
+}
+
+function toggleProfile(id) {
+  let p = [...state.profiles];
+  if (p.includes(id)) p = p.filter(x=>x!==id);
+  else if (p.length < 3) p.push(id);
+  setState({ profiles: p });
+}
+
+// ─── FOCUS WINDOWS STEP ──────────────────────────────────────────────────────
+
+const WINDOW_RANK_LABELS = ["Best window", "Next best window", "Third best window"];
+
+function screenFocus() {
+  // Sub-state machine within this one step: choice -> count -> ranges
+  if (state.focusWindowChoice == null) {
+    return `<div class="screen">
+      <button class="back-btn" onclick="setState({step:'profile'})">← Back</button>
+      <div class="eyebrow">Step 3 of 6</div>
+      <h1>Do you know your focus windows?</h1>
+      <p class="sub">Most people focus better at certain times of day than others. If you know yours, we can suggest better times for your heaviest tasks. Totally optional.</p>
+      <button class="track-btn" onclick="setState({focusWindowChoice:'yes'})">
+        <div class="track-btn-title">I know mine</div>
+        <div class="track-btn-desc">I have a sense of when I focus best during the day.</div>
+      </button>
+      <button class="track-btn" onclick="setState({focusWindowChoice:'skip', focusWindows:null, step:'daybounds'})">
+        <div class="track-btn-title">Skip this</div>
+        <div class="track-btn-desc">Just schedule by deadline and stakes for now.</div>
+      </button>
+    </div>`;
+  }
+
+  if (state.focusWindowChoice === "yes" && state.focusWindowCount == null) {
+    return `<div class="screen">
+      <button class="back-btn" onclick="setState({focusWindowChoice:null})">← Back</button>
+      <div class="eyebrow">Step 3 of 6</div>
+      <h1>How many focus windows do you usually notice in a day?</h1>
+      <p class="sub">Most people have one to three. Pick the number that feels true, you can always change this later.</p>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
+        ${[1,2,3].map(n=>`
+          <button class="track-btn" onclick="setFocusWindowCount(${n})">
+            <div class="track-btn-title">${n} window${n>1?"s":""}</div>
+          </button>`).join("")}
+      </div>
+    </div>`;
+  }
+
+  if (state.focusWindowChoice === "yes" && state.focusWindowCount != null) {
+    const windows = state.focusWindows || Array.from({length:state.focusWindowCount}, () => ({start:"",end:""}));
+    const allFilled = windows.every(w => w.start && w.end);
+    return `<div class="screen">
+      <button class="back-btn" onclick="setState({focusWindowCount:null})">← Back</button>
+      <div class="eyebrow">Step 3 of 6</div>
+      <h1>Rank them, best window first, and roughly when each one happens.</h1>
+      <p class="sub">Don't overthink the exact minutes, a rough range is enough.</p>
+      ${windows.map((w,i)=>`
+        <div class="card" style="padding:16px 18px">
+          <div class="field-label" style="margin-bottom:9px">${WINDOW_RANK_LABELS[i]}</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input type="time" value="${w.start}" onchange="setFocusWindowField(${i},'start',this.value)">
+            <span style="font-size:12px;color:#9A9188">to</span>
+            <input type="time" value="${w.end}" onchange="setFocusWindowField(${i},'end',this.value)">
+          </div>
+        </div>`).join("")}
+      <button class="primary-btn" ${allFilled?"":"disabled"} onclick="confirmFocusWindows()">Continue</button>
+    </div>`;
+  }
+
+  // Fallback: if focusWindowChoice is "skip" (or any other unexpected value) and the
+  // user lands back on this step, e.g. via Back from the next screen, reset to the
+  // first question rather than recursing.
+  state.focusWindowChoice = null;
+  return screenFocus();
+}
+
+function confirmFocusWindows() {
+  setState({ focusWindows: state.focusWindows, step: 'daybounds' });
+}
+
+function setFocusWindowCount(n) {
+  const existing = state.focusWindows || [];
+  const merged = Array.from({length: n}, (_,i) => existing[i] || {start:"",end:""});
+  setState({ focusWindowCount: n, focusWindows: merged });
+}
+
+function setFocusWindowField(index, key, val) {
+  const windows = [...(state.focusWindows || [])];
+  windows[index] = { ...windows[index], [key]: val };
+  state.focusWindows = windows; // update without full render to avoid losing focus on the other input mid-edit
+  // re-render just to refresh the Continue button's disabled state
+  const btn = document.querySelector(".screen .primary-btn");
+  if (btn) {
+    const allFilled = windows.every(w => w.start && w.end);
+    btn.disabled = !allFilled;
+  }
+}
+
+// ─── DAY BOUNDARIES STEP ─────────────────────────────────────────────────────
+
+function nextStepAfterDayBounds() {
+  return "fixedcommitments";
+}
+
+function nextStepAfterFixedCommitments() {
+  return state.track === "fast" ? "entrymethod" : "dump";
+}
+
+function screenDayBounds() {
+  if (state.dayBoundsChoice == null) {
+    return `<div class="screen">
+      <button class="back-btn" onclick="setState({step:'focus'})">← Back</button>
+      <div class="eyebrow">Step 4 of 6</div>
+      <h1>What time does your day usually start and end?</h1>
+      <p class="sub">This helps us place tasks at realistic times for you, not just inside your focus windows. Totally optional.</p>
+      <button class="track-btn" onclick="setState({dayBoundsChoice:'yes'})">
+        <div class="track-btn-title">I know mine</div>
+        <div class="track-btn-desc">I have a rough start and end to my day.</div>
+      </button>
+      <button class="track-btn" onclick="setState({dayBoundsChoice:'skip', dayBounds:null, step: nextStepAfterDayBounds()})">
+        <div class="track-btn-title">Skip this</div>
+        <div class="track-btn-desc">Just place things wherever makes sense.</div>
+      </button>
+    </div>`;
+  }
+
+  if (state.dayBoundsChoice === "yes" && (!state.dayBounds || state.editingDayBounds)) {
+    const bounds = state.dayBounds || { start: "", end: "" };
+    const filled = bounds.start && bounds.end;
+    return `<div class="screen">
+      <button class="back-btn" onclick="setState({dayBoundsChoice:null, editingDayBounds:false})">← Back</button>
+      <div class="eyebrow">Step 4 of 6</div>
+      <h1>When does your day start and wind down?</h1>
+      <p class="sub">A rough range is enough.</p>
+      <div class="card" style="padding:16px 18px">
+        <div class="field-label" style="margin-bottom:9px">Day starts</div>
+        <input type="time" value="${bounds.start}" onchange="setDayBoundsField('start',this.value)">
+      </div>
+      <div class="card" style="padding:16px 18px">
+        <div class="field-label" style="margin-bottom:9px">Day winds down</div>
+        <input type="time" value="${bounds.end}" onchange="setDayBoundsField('end',this.value)">
+      </div>
+      <button class="primary-btn" id="daybounds-continue" ${filled?"":"disabled"} onclick="confirmDayBounds()">Continue</button>
+    </div>`;
+  }
+
+  // Day bounds are set (or being edited). If work hours haven't been answered yet,
+  // ask the split question now, as a refinement of the day they just described.
+  if (state.dayBoundsChoice === "yes" && state.dayBounds && state.workHoursChoice == null) {
+    return `<div class="screen">
+      <button class="back-btn" onclick="setState({editingDayBounds:true})">← Back</button>
+      <div class="eyebrow">Step 4 of 6</div>
+      <h1>Does your day split into work time and personal time?</h1>
+      <p class="sub">For example, 9 to 5 at work, then your own time after. If your day doesn't split like this, skip it.</p>
+      <button class="track-btn" onclick="setState({workHoursChoice:'yes'})">
+        <div class="track-btn-title">Yes, it splits</div>
+        <div class="track-btn-desc">I have set work hours, then time that's mine.</div>
+      </button>
+      <button class="track-btn" onclick="setState({workHoursChoice:'skip', workHours:null, step: nextStepAfterDayBounds()})">
+        <div class="track-btn-title">Skip this</div>
+        <div class="track-btn-desc">My day doesn't split like that.</div>
+      </button>
+    </div>`;
+  }
+
+  // Work hours entry
+  if (state.workHoursChoice === "yes") {
+    const wh = state.workHours || { start: "", end: "" };
+    const filled = wh.start && wh.end;
+    return `<div class="screen">
+      <button class="back-btn" onclick="setState({workHoursChoice:null})">← Back</button>
+      <div class="eyebrow">Step 4 of 6</div>
+      <h1>What are your work hours?</h1>
+      <p class="sub">We'll treat the rest of your day, between this and when your day winds down, as personal time.</p>
+      <div class="card" style="padding:16px 18px">
+        <div class="field-label" style="margin-bottom:9px">Work starts</div>
+        <input type="time" value="${wh.start}" onchange="setWorkHoursField('start',this.value)">
+      </div>
+      <div class="card" style="padding:16px 18px">
+        <div class="field-label" style="margin-bottom:9px">Work ends</div>
+        <input type="time" value="${wh.end}" onchange="setWorkHoursField('end',this.value)">
+      </div>
+      <button class="primary-btn" id="workhours-continue" ${filled?"":"disabled"} onclick="confirmWorkHours()">Continue</button>
+    </div>`;
+  }
+
+  // workHoursChoice is "skip" (or anything unexpected) and day bounds are already
+  // set — nothing left to ask on this step, advance immediately. This also covers
+  // returning users whose saved defaults already answered both questions, so they
+  // don't get stuck looking at a step that has nothing left to show them.
+  if (state.step === "daybounds") {
+    state.step = nextStepAfterDayBounds();
+    return screenForCurrentStep();
+  }
+  return "";
+}
+
+function setDayBoundsField(key, val) {
+  const bounds = { ...(state.dayBounds || {start:"",end:""}), [key]: val };
+  state.dayBounds = bounds;
+  const btn = document.getElementById("daybounds-continue");
+  if (btn) btn.disabled = !(bounds.start && bounds.end);
+}
+
+function confirmDayBounds() {
+  // Don't advance the step yet — screenDayBounds will now ask the work/home
+  // split question next, since state.dayBounds is set but workHoursChoice isn't.
+  setState({ dayBounds: state.dayBounds, editingDayBounds: false });
+}
+
+function setWorkHoursField(key, val) {
+  const wh = { ...(state.workHours || {start:"",end:""}), [key]: val };
+  state.workHours = wh;
+  const btn = document.getElementById("workhours-continue");
+  if (btn) btn.disabled = !(wh.start && wh.end);
+}
+
+function confirmWorkHours() {
+  setState({ workHours: state.workHours, step: nextStepAfterDayBounds() });
+}
+
+// ─── FIXED COMMITMENTS ────────────────────────────────────────────────────────
+
+// Today-only immovable blocks (meetings, calls, school runs) that already exist
+// regardless of anything in this list. Not remembered as a default like focus
+// windows or day bounds, since "I have a meeting at 3pm" is true today, not
+// every day. Feeds the same collision logic real tasks already use, plus seeds
+// Fast Track's auto-placement so it never silently offers an occupied slot.
+const MAX_FIXED_COMMITMENTS = 5;
+
+function screenFixedCommitments() {
+  if (state.fixedCommitmentsChoice == null) {
+    return `<div class="screen">
+      <button class="back-btn" onclick="setState({step:'daybounds'})">← Back</button>
+      <div class="eyebrow">Step 5 of 6</div>
+      <h1>Anything already fixed in your day?</h1>
+      <p class="sub">Meetings, calls, school runs, anything with a set time that can't move. We'll work everything else around these. Totally optional.</p>
+      <button class="track-btn" onclick="setState({fixedCommitmentsChoice:'yes', fixedCommitments: state.fixedCommitments.length ? state.fixedCommitments : [makeFixedCommitment()]})">
+        <div class="track-btn-title">Yes, let me add them</div>
+        <div class="track-btn-desc">I have a few things already locked in today.</div>
+      </button>
+      <button class="track-btn" onclick="setState({fixedCommitmentsChoice:'skip', fixedCommitments:[], step: nextStepAfterFixedCommitments()})">
+        <div class="track-btn-title">Skip this</div>
+        <div class="track-btn-desc">Nothing fixed today, or I'll work around it myself.</div>
+      </button>
+    </div>`;
+  }
+
+  const list = state.fixedCommitments.length ? state.fixedCommitments : [makeFixedCommitment()];
+  const allValid = list.every(c => c.name.trim() && c.start && c.end);
+  const brk = state.breakTime || { start: "", duration: "" };
+  const BREAK_DURATIONS = [
+    { mins: 15, label: "15 min" },
+    { mins: 20, label: "20 min" },
+    { mins: 30, label: "30 min" },
+    { mins: 45, label: "45 min" },
+    { mins: 60, label: "1 hour" },
+  ];
+  return `<div class="screen">
+    <button class="back-btn" onclick="setState({fixedCommitmentsChoice:null})">← Back</button>
+    <div class="eyebrow">Step 5 of 6</div>
+    <h1>What's already fixed today?</h1>
+    <p class="sub">Up to ${MAX_FIXED_COMMITMENTS}. We'll schedule everything else around these.</p>
+    ${list.map((c,i)=>`
+      <div class="card" style="padding:16px 18px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div class="field-label" style="margin:0">Commitment ${i+1}</div>
+          ${list.length > 1 ? `<button class="remove-btn" onclick="removeFixedCommitment(${i})">×</button>` : ""}
+        </div>
+        <input type="text" placeholder="e.g. Team standup" value="${escHtml(c.name)}" id="fc-name-${i}" oninput="setFixedCommitmentFieldQuiet(${i},'name',this.value)" onblur="commitFixedCommitmentField(${i},'name',this.value)" style="width:100%;margin-bottom:10px">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input type="time" value="${c.start}" onchange="setFixedCommitmentField(${i},'start',this.value)">
+          <span style="font-size:12px;color:#9A9188">to</span>
+          <input type="time" value="${c.end}" onchange="setFixedCommitmentField(${i},'end',this.value)">
+        </div>
+      </div>`).join("")}
+    ${list.length < MAX_FIXED_COMMITMENTS ? `<button class="add-task-btn" style="margin-bottom:16px" onclick="addFixedCommitment()">+ Add another</button>` : ""}
+    <div class="card" style="padding:16px 18px;border-style:dashed">
+      <div class="field-label" style="margin-bottom:6px">When do you want to take a break today?</div>
+      <div style="font-size:12px;color:#9A9188;margin-bottom:10px">Optional. We'll block it off so nothing gets scheduled over it.</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="time" value="${brk.start}" onchange="setBreakField('start',this.value)" placeholder="Start time">
+        <select onchange="setBreakField('duration',this.value)" style="margin-bottom:0">
+          <option value="">How long?</option>
+          ${BREAK_DURATIONS.map(d=>`<option value="${d.mins}"${String(brk.duration)===String(d.mins)?" selected":""}>${d.label}</option>`).join("")}
+        </select>
+        ${brk.start && brk.duration ? `<button class="remove-btn" onclick="setBreakField('start','');setBreakField('duration','')">×</button>` : ""}
+      </div>
+    </div>
+    <button class="primary-btn" id="fc-continue" ${allValid?"":"disabled"} style="margin-top:16px" onclick="confirmFixedCommitments()">Continue</button>
+  </div>`;
+}
+
+function makeFixedCommitment() {
+  return { id: uid(), name: "", start: "", end: "" };
+}
+
+function addFixedCommitment() {
+  const list = state.fixedCommitments.length ? state.fixedCommitments : [makeFixedCommitment()];
+  if (list.length >= MAX_FIXED_COMMITMENTS) return;
+  setState({ fixedCommitments: [...list, makeFixedCommitment()] });
+}
+
+function removeFixedCommitment(i) {
+  const list = [...state.fixedCommitments];
+  list.splice(i, 1);
+  setState({ fixedCommitments: list.length ? list : [makeFixedCommitment()] });
+}
+
+function setFixedCommitmentField(i, key, val) {
+  const list = [...state.fixedCommitments];
+  if (!list[i]) return;
+  list[i] = { ...list[i], [key]: val };
+  setState({ fixedCommitments: list });
+}
+
+// Quiet variant for the free-text name field, same cursor-preservation pattern
+// used elsewhere: update state silently on input, commit (and re-validate the
+// Continue button) on blur, so typing doesn't trigger a full re-render per keystroke.
+function setFixedCommitmentFieldQuiet(i, key, val) {
+  const list = [...state.fixedCommitments];
+  if (!list[i]) return;
+  list[i] = { ...list[i], [key]: val };
+  state.fixedCommitments = list;
+}
+function commitFixedCommitmentField(i, key, val) {
+  const list = [...state.fixedCommitments];
+  if (!list[i]) return;
+  list[i] = { ...list[i], [key]: val };
+  state.fixedCommitments = list;
+  const btn = document.getElementById("fc-continue");
+  if (btn) btn.disabled = !list.every(c => c.name.trim() && c.start && c.end);
+}
+
+function setBreakField(key, val) {
+  const brk = { ...(state.breakTime || { start: "", duration: "" }), [key]: val };
+  setState({ breakTime: brk });
+}
+
+function clearBreak() { setState({ breakTime: {} }); }
+
+function confirmFixedCommitments() {
+  // Drop any fully-empty trailing rows before saving.
+  const cleaned = state.fixedCommitments.filter(c => c.name.trim() && c.start && c.end);
+
+  // If a break was configured, convert it to a fixed commitment entry so the
+  // rest of the system (collision detection, placement, window capacity) treats
+  // it identically to any other fixed block, with no extra awareness needed anywhere.
+  const brk = state.breakTime;
+  if (brk?.start && brk?.duration) {
+    const breakMins = Number(brk.duration);
+    const breakStart = timeToMinutes(brk.start);
+    if (breakStart != null && breakMins > 0) {
+      const breakEnd = minutesToTime(breakStart + breakMins);
+      cleaned.push({ id: uid(), name: "Break", start: brk.start, end: breakEnd, isBreak: true });
+    }
+  }
+
+  setState({ fixedCommitments: cleaned, step: nextStepAfterFixedCommitments() });
+}
+
+// ─── FAST LANE: ENTRY METHOD ─────────────────────────────────────────────────
+
+function screenEntryMethod() {
+  return `<div class="screen">
+    <button class="back-btn" onclick="setState({step:'setup'})">← Back</button>
+    <h1>How do you want to add your tasks?</h1>
+    <p class="sub">Whichever is faster for you right now.</p>
+    <button class="track-btn" onclick="setState({entryMethod:'paste', step:'paste'})">
+      <div class="track-btn-title">Paste or type as one note</div>
+      <div class="track-btn-desc">Dump everything in one go, copied from WhatsApp, Notes, anywhere. We'll split it into tasks for you.</div>
+    </button>
+    <button class="track-btn" onclick="setState({entryMethod:'fields', step:'dump'})">
+      <div class="track-btn-title">Add tasks one by one</div>
+      <div class="track-btn-desc">Type them into separate fields as they come to you.</div>
+    </button>
+  </div>`;
+}
+
+// ─── FAST LANE: PASTE + PARSE ────────────────────────────────────────────────
+
+// Splits a rough note into individual task lines. Handles line breaks, bullet
+// markers (-, *, •, numbers), and common joining words like "and"/"also"/";" when
+// they appear to be separating distinct action items rather than part of a phrase.
+function parseNoteIntoTasks(note) {
+  if (!note || !note.trim()) return [];
+  let text = note.trim();
+
+  // First split on hard line breaks — most people's notes already have these
+  let lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+
+  // For any line that's unusually long (likely several tasks run together),
+  // try splitting further on bullet-like separators within the line.
+  const expanded = [];
+  for (const line of lines) {
+    if (line.length > 60) {
+      const parts = line
+        .split(/(?:,\s*(?:and\s+)?|;\s*|\.\s+(?=[A-Z])|\s+also\s+|\s+then\s+)/i)
+        .map(p => p.trim())
+        .filter(p => p.length > 2);
+      if (parts.length > 1) { expanded.push(...parts); continue; }
+    }
+    expanded.push(line);
+  }
+
+  // Strip leading bullet markers and numbering
+  return expanded
+    .map(l => l.replace(/^[\-\*•\u2022]\s*/, "").replace(/^\d+[\.\)]\s*/, "").trim())
+    .filter(Boolean)
+    .slice(0, 20); // respect the 20 task cap
+}
+
+function screenPaste() {
+  if (!state.parsedTasks || !state.parsedTasks.length) {
+    return `<div class="screen">
+      <button class="back-btn" onclick="setState({step:'entrymethod'})">← Back</button>
+      <div class="eyebrow">Step 6 of 6</div>
+      <h1>Paste or type your note</h1>
+      <p class="sub">Write it however it naturally comes out. We'll split it into separate tasks next.</p>
+      <textarea id="paste-area" placeholder="e.g. need to reply to client brief, pick up groceries, finish the deck for tomorrow, call mom..."
+        style="width:100%;min-height:160px;padding:13px 14px;border-radius:10px;border:1.5px solid #E4DDD2;background:#fff;font-size:14px;font-family:Georgia,serif;outline:none;color:#1A1714;resize:vertical;margin-bottom:16px"
+        oninput="state.pasteNote=this.value">${escHtml(state.pasteNote)}</textarea>
+      <button class="primary-btn" onclick="runParse()">Split into tasks</button>
+    </div>`;
+  }
+
+  return `<div class="screen">
+    <button class="back-btn" onclick="setState({parsedTasks:[]})">← Back</button>
+    <div class="eyebrow">Step 6 of 6</div>
+    <h1>Here's what we found</h1>
+    <p class="sub">Edit, merge, or remove anything before we score these. Add more lines if we missed something.</p>
+    ${state.parsedTasks.map((t,i)=>`
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span style="font-size:12px;color:#9A9188;width:18px;text-align:right;flex-shrink:0">${i+1}</span>
+        <input class="dump-input" type="text" value="${escHtml(t)}" oninput="updateParsedTask(${i},this.value)">
+        <button class="remove-btn" onclick="removeParsedTask(${i})">×</button>
+      </div>`).join("")}
+    ${state.parsedTasks.length < 20 ? `<button class="add-task-btn" style="margin-bottom:16px" onclick="addParsedTaskLine()">+ Add a line</button>` : ""}
+    <button class="primary-btn" onclick="confirmParsedTasks()">Looks good, continue</button>
+  </div>`;
+}
+
+function runParse() {
+  const ta = document.getElementById("paste-area");
+  const note = ta ? ta.value : state.pasteNote;
+  const tasks = parseNoteIntoTasks(note);
+  if (!tasks.length) return;
+  setState({ pasteNote: note, parsedTasks: tasks });
+}
+
+function updateParsedTask(i, val) {
+  const pt = [...state.parsedTasks];
+  pt[i] = val;
+  state.parsedTasks = pt;
+}
+
+function removeParsedTask(i) {
+  setState({ parsedTasks: state.parsedTasks.filter((_,idx)=>idx!==i) });
+}
+
+function addParsedTaskLine() {
+  setState({ parsedTasks: [...state.parsedTasks, ""] });
+}
+
+function confirmParsedTasks() {
+  const names = state.parsedTasks.map(t=>t.trim()).filter(Boolean);
+  if (!names.length) return;
+  setState({ tasks: names.map(n => makeTask(n)), step: 'fastscore' });
+}
+
+function screenDump() {
+  const count = state.rawTasks.filter(t=>t.trim()).length;
+  const visible = Math.min(state.visibleTaskFields, 20);
+  return `<div class="screen">
+    <button class="back-btn" onclick="setState({step:'fixedcommitments'})">← Back</button>
+    <div class="eyebrow">Step 6 of 6</div>
+    <h1>What's on your mind?</h1>
+    <p class="sub">Type everything you need to do. Don't filter yet, just get it out. Up to 20 tasks.</p>
+    ${state.rawTasks.slice(0, visible).map((t,i)=>`
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span style="font-size:12px;color:#9A9188;width:18px;text-align:right;flex-shrink:0">${i+1}</span>
+        <input class="dump-input" type="text" value="${escHtml(t)}" placeholder="${i===0?"e.g. Reply to client brief":""}"
+          oninput="updateRawTask(${i},this.value)">
+      </div>`).join("")}
+    ${visible < 20 ? `<button class="add-task-btn" style="margin-bottom:16px" onclick="addRawTaskField()">+ Add a task</button>` : ""}
+    <p style="font-size:12px;color:#9A9188;margin-bottom:20px;padding-left:26px">${count} task${count!==1?"s":""} added</p>
+    <div style="margin-bottom:20px">
+      <div style="font-size:13px;font-weight:700;color:#1A1714;margin-bottom:6px">Realistically, how many of these can you get done today?</div>
+      <div style="font-size:12px;color:#9A9188;margin-bottom:10px">Be honest. Everything past that number moves to tomorrow.</div>
+      <div class="capacity-chips">
+        ${[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20].map(n=>`<button class="cap-chip${state.capacity===n?" active":""}" onclick="setState({capacity:${n}})">${n}</button>`).join("")}
+      </div>
+    </div>
+    <button class="primary-btn" ${count>0&&state.capacity!=null?"":"disabled"} onclick="goScore()">Start scoring</button>
+  </div>`;
+}
+
+function addRawTaskField() {
+  setState({ visibleTaskFields: Math.min(state.visibleTaskFields + 1, 20) });
+}
+
+function updateRawTask(i, val) {
+  const rt = [...state.rawTasks];
+  rt[i] = val;
+  state.rawTasks = rt;
+  // update count without full re-render
+  const el = document.querySelector("[data-task-count]");
+  const c = rt.filter(t=>t.trim()).length;
+  if (el) el.textContent = `${c} task${c!==1?"s":""} added`;
+}
+
+function goScore() {
+  const filled = state.rawTasks.filter(t=>t.trim());
+  if (!filled.length) return;
+  setState({ tasks: filled.map(name=>makeTask(name)), step: state.track === "fast" ? "fastscore" : "score" });
+}
+
+function screenScore() {
+  const ranked = rankTasks(state.tasks, state.track, state.profiles);
+  const cap = state.capacity ?? ranked.length;
+
+  const cardsHtml = state.tasks.map((t,i)=>renderTaskCard(t, i, state.track, state.profiles, state.tasks.length)).join("");
+  const rankedHtml = ranked.length >= 1 ? `<hr class="separator">${renderRankedList(ranked, cap)}` : "";
+  const triageHtml = state.showTriage ? `
+    <div class="triage-overlay" onclick="if(event.target===this)setState({showTriage:false})">
+      <div class="triage-sheet" id="triage-sheet">${triageSheetHtml()}</div>
+    </div>` : "";
+
+  return `<div class="screen">
+    <button class="back-btn" onclick="setState({step:'dump'})">← Back</button>
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
+      <div class="eyebrow">${escHtml(state.userName)}'s list</div>
+      <span style="font-size:11.5px;color:#9A9188">${state.track==="fast"?"Fast track":"Deep dive"}</span>
+    </div>
+    <h1 style="margin-bottom:6px">Score each task</h1>
+    <p class="sub">Work through each one. Your ranked list builds as you go.</p>
+    ${renderLegend()}
+    ${cardsHtml}
+    ${rankedHtml}
+    ${triageHtml}
+    <button class="add-task-btn" style="margin-top:10px;border-style:solid;color:#B08A6A" onclick="if(confirm('Clear this list and start over?'))startFresh()">Start a new list</button>
+  </div>`;
+}
+
+// ─── RENDER ──────────────────────────────────────────────────────────────────
+
+function renderResumePrompt(snapshot) {
+  const savedDate = new Date(snapshot.savedAt);
+  const isToday = savedDate.toDateString() === new Date().toDateString();
+  const whenLabel = isToday
+    ? `today at ${formatTime12(`${String(savedDate.getHours()).padStart(2,"0")}:${String(savedDate.getMinutes()).padStart(2,"0")}`)}`
+    : savedDate.toLocaleDateString();
+  const taskCount = (snapshot.tasks && snapshot.tasks.length) || (snapshot.rawTasks||[]).filter(t=>t.trim()).length;
+
+  return `<div class="triage-overlay">
+    <div class="triage-sheet">
+      <div class="eyebrow">Welcome back${snapshot.userName ? ", " + escHtml(snapshot.userName) : ""}</div>
+      <h1 style="font-size:20px;margin-bottom:8px">Pick up where you left off?</h1>
+      <p class="sub">You had ${taskCount} task${taskCount!==1?"s":""} in progress from ${whenLabel}.</p>
+      <button class="primary-btn" style="margin-bottom:10px" onclick="resumeSession()">Resume that list</button>
+      <button class="back-btn" style="padding:0;justify-content:center;width:100%" onclick="dismissResume()">Start a new list instead</button>
+    </div>
+  </div>`;
+}
+
+function resumeSession() {
+  const snapshot = loadSession();
+  if (snapshot) {
+    Object.assign(state, snapshot, { resumePromptShown: true });
+  }
+  render();
+}
+
+function dismissResume() {
+  clearSession();
+  const defaults = loadDefaults();
+  Object.assign(state, {
+    resumePromptShown: true,
+    userName: defaults?.userName || "",
+    track: defaults?.track || null,
+    profiles: defaults?.profiles || [],
+    focusWindows: defaults?.focusWindows || null,
+    focusWindowChoice: defaults?.focusWindowChoice || null,
+    dayBounds: defaults?.dayBounds || null,
+    dayBoundsChoice: defaults?.dayBoundsChoice || null,
+    workHoursChoice: defaults?.workHoursChoice || null,
+    workHours: defaults?.workHours || null,
+  });
+  render();
+}
+
+function screenForCurrentStep() {
+  switch(state.step) {
+    case "name":    return screenName();
+    case "track":   return screenTrack();
+    case "setup":   return screenSetup();
+    case "profile": return screenProfile();
+    case "focus":   return screenFocus();
+    case "daybounds": return screenDayBounds();
+    case "fixedcommitments": return screenFixedCommitments();
+    case "entrymethod": return screenEntryMethod();
+    case "paste": return screenPaste();
+    case "board": return screenBoard();
+    case "fastscore": return screenFastScore();
+    case "dump":    return screenDump();
+    case "score":   return screenScore();
+    default: return "";
+  }
+}
+
+function render() {
+  const app = document.getElementById("app");
+
+  if (!state.resumePromptShown) {
+    const snapshot = loadSession();
+    if (isResumable(snapshot)) {
+      app.innerHTML = renderResumePrompt(snapshot);
+      return;
+    }
+    state.resumePromptShown = true;
+    const defaults = loadDefaults();
+    if (defaults && (state.step === "name" || state.step === "track") && !state.userName) {
+      state.userName = defaults.userName || "";
+      state.track = defaults.track || null;
+      state.profiles = defaults.profiles || [];
+      state.focusWindows = defaults.focusWindows || null;
+      state.focusWindowChoice = defaults.focusWindowChoice || null;
+      state.dayBounds = defaults.dayBounds || null;
+      state.dayBoundsChoice = defaults.dayBoundsChoice || null;
+      state.workHoursChoice = defaults.workHoursChoice || null;
+      state.workHours = defaults.workHours || null;
+    }
+  }
+
+  switch(state.step) {
+    case "name":    app.innerHTML = screenName();    break;
+    case "track":   app.innerHTML = screenTrack();   break;
+    case "setup":   app.innerHTML = screenSetup();   break;
+    case "profile": app.innerHTML = screenProfile(); break;
+    case "focus":   app.innerHTML = screenFocus();   break;
+    case "daybounds": app.innerHTML = screenDayBounds(); break;
+    case "fixedcommitments": app.innerHTML = screenFixedCommitments(); break;
+    case "entrymethod": app.innerHTML = screenEntryMethod(); break;
+    case "paste": app.innerHTML = screenPaste(); break;
+    case "board": app.innerHTML = screenBoard(); break;
+    case "fastscore": app.innerHTML = screenFastScore(); break;
+    case "dump":    app.innerHTML = screenDump();    break;
+    case "score":   app.innerHTML = screenScore();   break;
+  }
+}
+
+render();
+</script>
+</body>
+</html>
