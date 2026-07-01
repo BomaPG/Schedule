@@ -2,8 +2,36 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="My Planner">
+<meta name="theme-color" content="#1A1714">
 <title>My Planner</title>
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADICAYAAACtWK6eAAAACXBIWXMAAAsTAAALEwEAmpwYAAAF8WlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNS42LWMxNDUgNzkuMTYzNDk5LCAyMDE4LzA4LzEzLTE2OjQwOjIyICAgICAgICAiPiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOnhtcE1NPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvbW0vIiB4bWxuczpzdFJlZj0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL3NUeXBlL1Jlc291cmNlUmVmIyIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ0MgMjAxOSAoTWFjaW50b3NoKSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo5QzM3MkFGRTYyNTExMUU5QjZBNkQ1QUYyQjA3MEYxMiIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo5QzM3MkFGRjYyNTExMUU5QjZBNkQ1QUYyQjA3MEYxMiI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjlDMzcyQUZDNjI1MTExRTlCNkE2RDVBRjJCMDcwRjEyIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjlDMzcyQUZENjI1MTExRTlCNkE2RDVBRjJCMDcwRjEyIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+">
+<script>
+  (function() {
+    const manifest = {
+      name: "My Planner",
+      short_name: "My Planner",
+      start_url: ".",
+      display: "standalone",
+      background_color: "#F2EFE8",
+      theme_color: "#1A1714",
+      icons: [{
+        src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%231A1714'/%3E%3Crect x='28' y='22' width='44' height='56' rx='6' fill='%23F2EFE8'/%3E%3Crect x='38' y='16' width='24' height='12' rx='4' fill='%231A3A72'/%3E%3Cline x1='36' y1='42' x2='64' y2='42' stroke='%231A1714' stroke-width='4' stroke-linecap='round'/%3E%3Cline x1='36' y1='54' x2='64' y2='54' stroke='%231A1714' stroke-width='4' stroke-linecap='round'/%3E%3Cline x1='36' y1='66' x2='52' y2='66' stroke='%231A1714' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E",
+        sizes: "any",
+        type: "image/svg+xml"
+      }]
+    };
+    const blob = new Blob([JSON.stringify(manifest)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("link");
+    link.rel = "manifest";
+    link.href = url;
+    document.head.appendChild(link);
+  })();
+</script>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
