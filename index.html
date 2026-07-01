@@ -1957,7 +1957,12 @@ function screenSetup() {
 
 function toggleSetupSection(key) {
   const current = state.setupOpenSections || {};
-  setState({ setupOpenSections: { ...current, [key]: !current[key] } });
+  const isOpening = !current[key];
+  const patch = { setupOpenSections: { ...current, [key]: isOpening } };
+  if (key === "fixedCommitments" && isOpening && !(state.fixedCommitments || []).filter(c=>!c.isBreak).length) {
+    patch.fixedCommitments = [makeFixedCommitment()];
+  }
+  setState(patch);
 }
 
 function confirmSetup() {
@@ -2302,6 +2307,7 @@ function removeFixedCommitment(i) {
 
 function setFixedCommitmentField(i, key, val) {
   const list = [...state.fixedCommitments];
+  if (!list[i]) return;
   list[i] = { ...list[i], [key]: val };
   setState({ fixedCommitments: list });
 }
