@@ -135,6 +135,7 @@ const state = {
   editingTaskId: null,     // which task's board card is in edit mode, or null
   setupOpenSections: {},   // which sections are expanded on the combined fast-track setup screen
   copyFallbackText: null,  // set when clipboard API fails/times out, shows a manual-copy box
+  fastScoreStep: 0,        // which question screen we're on (0-3) in the new fast score flow
 };
 
 const STORAGE_KEY = "priorityCalc.session";
@@ -163,6 +164,7 @@ function saveSession() {
       pasteNote: state.pasteNote,
       parsedTasks: state.parsedTasks,
       autoPlanned: state.autoPlanned,
+      fastScoreStep: state.fastScoreStep || 0,
       savedAt: Date.now(),
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
@@ -427,7 +429,7 @@ function rankTasks(tasks, track, profiles) {
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
 function uid() { return Math.random().toString(36).slice(2); }
-function makeTask(name) { return { id: uid(), name: name||"", scores:{}, scheduledTime:"", scheduledDay:"", duration:"", delegateTo:"" }; }
+function makeTask(name) { return { id: uid(), name: name||"", scores:{}, scheduledTime:"", scheduledDay:"", duration:"", delegateTo:"", taskPeriod:null }; }
 
 // Day ordering: Today=0, Tomorrow=1, named weekdays=2 (relative order not resolved further), no day=99
 function dayRank(task, profiles) {
@@ -950,19 +952,120 @@ function renderFastTaskCard(task, index) {
     </div>`;
 }
 
+const FAST_SCORE_QUESTIONS = [
+  {
+    key: "today",
+    q: "Which of these are due today?",
+    sub: "Tap all that apply. Skip if none.",
+    setScore: (task, selected) => {
+      if (selected) {
+        task.scores.deadline = 4;
+      } else if (task.scores.deadline === 4) {
+        task.scores.deadline = null;
+      }
+    },
+    isSelected: (task) => task.scores.deadline === 4,
+  },
+  {
+    key: "tomorrow",
+    q: "Which are due tomorrow?",
+    sub: "From what\'s left. Tap all that apply.",
+    setScore: (task, selected) => {
+      if (selected) {
+        task.scores.deadline = 3;
+      } else if (task.scores.deadline === 3) {
+        task.scores.deadline = null;
+      }
+    },
+    isSelected: (task) => task.scores.deadline === 3,
+    isGreyed: (task) => task.scores.deadline === 4,
+  },
+  {
+    key: "effort",
+    q: "Which will take more than an hour?",
+    sub: "Anything that needs a real block of time.",
+    setScore: (task, selected) => { task.scores.effort = selected ? 3 : 1; },
+    isSelected: (task) => task.scores.effort === 3,
+  },
+  {
+    key: "importance",
+    q: "Which would have real consequences if left undone today?",
+    sub: "A missed deadline, a displeased manager, money on the table — anything with a real cost.",
+    setScore: (task, selected) => { task.scores.importance = selected ? 3 : 1; },
+    isSelected: (task) => task.scores.importance === 3,
+  },
+];
+
+function fastScoreToggle(taskId, stepIndex) {
+  const q = FAST_SCORE_QUESTIONS[stepIndex];
+  const tasks = state.tasks.map(t => {
+    if (t.id !== taskId) return t;
+    const wasSelected = q.isSelected(t);
+    const updated = { ...t, scores: { ...t.scores } };
+    q.setScore(updated, !wasSelected);
+    return updated;
+  });
+  setState({ tasks });
+}
+
+function fastScoreNext() {
+  const nextStep = (state.fastScoreStep || 0) + 1;
+  if (nextStep >= FAST_SCORE_QUESTIONS.length) {
+    // All questions answered — fill in any nulls with defaults then proceed
+    const tasks = state.tasks.map(t => {
+      const s = { ...t.scores };
+      if (s.deadline == null) s.deadline = 2;
+      if (s.effort == null) s.effort = 1;
+      if (s.importance == null) s.importance = 1;
+      return { ...t, scores: s };
+    });
+    setState({ tasks, fastScoreStep: 0 });
+    runAutoPlacement();
+  } else {
+    setState({ fastScoreStep: nextStep });
+  }
+}
+
+function fastScoreBack() {
+  const step = state.fastScoreStep || 0;
+  if (step === 0) {
+    setState({ fastScoreStep: 0, step: state.entryMethod === "paste" ? "paste" : "dump" });
+  } else {
+    setState({ fastScoreStep: step - 1 });
+  }
+}
+
 function screenFastScore() {
-  const allComplete = state.tasks.length > 0 && state.tasks.every(t => isFastComplete(t, state.profiles));
+  const step = state.fastScoreStep || 0;
+  const q = FAST_SCORE_QUESTIONS[step];
+  const total = FAST_SCORE_QUESTIONS.length;
+  const dots = FAST_SCORE_QUESTIONS.map((_,i) =>
+    `<div style="height:3px;flex:1;border-radius:2px;background:${i < step ? "#1A1714" : i === step ? "#9A9188" : "#E4DDD2"};transition:background 0.2s"></div>`
+  ).join("");
+  const isLast = step === total - 1;
+  const taskItems = state.tasks.map(t => {
+    const selected = q.isSelected(t);
+    const greyed = q.isGreyed ? q.isGreyed(t) : false;
+    return `
+      <button onclick="${greyed ? "" : `fastScoreToggle('${t.id}',${step})`}"
+        style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:10px;border:${selected ? "1.5px solid #1A1714" : "0.5px solid #E4DDD2"};background:${selected ? "#F2EFE8" : "#fff"};cursor:${greyed ? "default" : "pointer"};width:100%;text-align:left;margin-bottom:8px;opacity:${greyed ? "0.35" : "1"};font-family:inherit">
+        <div style="width:18px;height:18px;border-radius:50%;border:${selected ? "none" : "1.5px solid #C0B8AE"};background:${selected ? "#1A1714" : "transparent"};flex-shrink:0;display:flex;align-items:center;justify-content:center">
+          ${selected ? `<div style="width:7px;height:7px;border-radius:50%;background:#F2EFE8"></div>` : ""}
+        </div>
+        <span style="font-size:13px;color:${greyed ? "#9A9188" : "#1A1714"};line-height:1.35">${escHtml(t.name)}</span>
+      </button>`;
+  }).join("");
   return `<div class="screen">
-    <button class="back-btn" onclick="setState({step: state.entryMethod==='paste' ? 'paste' : 'dump'})">← Back</button>
-    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
-      <div class="eyebrow">${escHtml(state.userName)}'s list</div>
-      <span style="font-size:11.5px;color:#9A9188">Fast track</span>
+    <div style="display:flex;gap:6px;margin-bottom:24px">${dots}</div>
+    <div class="eyebrow" style="margin-bottom:6px">Question ${step + 1} of ${total}</div>
+    <h1 style="margin-bottom:4px">${q.q}</h1>
+    <p class="sub">${q.sub}</p>
+    <div style="margin-bottom:24px">${taskItems}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <button class="back-btn" style="padding:0" onclick="fastScoreBack()">← Back</button>
+      <button class="primary-btn" style="width:auto;padding:11px 28px" onclick="fastScoreNext()">${isLast ? "See my plan" : "Next →"}</button>
     </div>
-    <h1 style="margin-bottom:6px">Three quick taps per task</h1>
-    <p class="sub">Then we'll lay out your day.</p>
-    ${state.tasks.map((t,i)=>renderFastTaskCard(t,i)).join("")}
-    <button class="primary-btn" ${allComplete?"":"disabled"} style="margin-top:8px" onclick="runAutoPlacement()">Help me plan my schedule</button>
-    <button class="add-task-btn" style="margin-top:10px;border-style:solid;color:#B08A6A" onclick="if(confirm('Clear this list and start over?'))startFresh()">Start a new list</button>
+    <button class="add-task-btn" style="margin-top:12px;border-style:solid;color:#B08A6A" onclick="if(confirm('Clear this list and start over?'))startFresh()">Start a new list</button>
   </div>`;
 }
 
@@ -1267,17 +1370,56 @@ function renderBoardCard(task) {
         </div>`;
     }
     const range = taskTimeRange(task);
+    const wh = state.workHours;
+    const hasWorkHours = state.workHoursChoice === "yes" && wh && wh.start && wh.end;
+    const periodConflictMsg = (() => {
+      if (!hasWorkHours || !task.taskPeriod || !task.scheduledTime) return "";
+      const tMins = timeToMinutes(task.scheduledTime);
+      const wStart = timeToMinutes(wh.start);
+      const wEnd = timeToMinutes(wh.end);
+      const inWork = tMins != null && tMins >= wStart && tMins < wEnd;
+      if (task.taskPeriod === "work" && !inWork) {
+        // find next open work-hours slot
+        const dur = taskDuration(task) || 30;
+        const occupied = state.tasks
+          .filter(r => r.id !== task.id && r.scheduledTime && r.taskPeriod === "work")
+          .map(r => ({ s: timeToMinutes(r.scheduledTime), e: timeToMinutes(r.scheduledTime) + (taskDuration(r) || 30) }));
+        let slot = wStart;
+        let suggestion = null;
+        while (slot + dur <= wEnd) {
+          if (!occupied.some(o => slot < o.e && slot + dur > o.s)) {
+            suggestion = minutesToTime(slot);
+            break;
+          }
+          slot += 15;
+        }
+        return `<div class="collision-warning" style="margin-top:8px">${formatTime12(task.scheduledTime)} is outside your work hours (${formatTime12(wh.start)}–${formatTime12(wh.end)})${suggestion ? ". Try " + formatTime12(suggestion) + " instead" : ""}.</div>`;
+      }
+      if (task.taskPeriod === "personal" && inWork) {
+        return `<div class="collision-warning" style="margin-top:8px">Scheduled during work hours. Move it after ${formatTime12(wh.end)} to keep it personal.</div>`;
+      }
+      return "";
+    })();
+    const periodPills = hasWorkHours ? `
+      <div style="display:flex;gap:5px;margin-top:8px">
+        <button onclick="setTaskPeriod('${task.id}','work')" style="padding:2px 7px;border-radius:4px;border:${task.taskPeriod==='work'?"1px solid #378ADD;background:#E6F1FB;color:#042C53":"0.5px solid #C0B8AE;background:#fff;color:#9A9188"};font-size:10.5px;font-weight:700;cursor:pointer;font-family:inherit">Work</button>
+        <button onclick="setTaskPeriod('${task.id}','personal')" style="padding:2px 7px;border-radius:4px;border:${task.taskPeriod==='personal'?"1px solid #7F77DD;background:#EEEDFE;color:#26215C":"0.5px solid #C0B8AE;background:#fff;color:#9A9188"};font-size:10.5px;font-weight:700;cursor:pointer;font-family:inherit">Personal</button>
+      </div>` : "";
     return `
-      <div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;gap:12px">
-        <div style="flex:1;min-width:0">
-          <div class="task-name-display" style="margin:0;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(task.name)}</div>
-          ${task.placedInWindow ? `<div style="font-size:10.5px;color:#1A3A72;margin-top:2px;letter-spacing:0.03em">Placed in focus window</div>` : ""}
+      <div class="card" style="padding:14px 18px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+          <div style="flex:1;min-width:0">
+            <div class="task-name-display" style="margin:0;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(task.name)}</div>
+            ${task.placedInWindow ? `<div style="font-size:10.5px;color:#1A3A72;margin-top:2px;letter-spacing:0.03em">Placed in focus window</div>` : ""}
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div class="ranked-meta" style="margin:0"><b style="color:#1A3A72">${range.start} - ${range.end}</b></div>
+            <div class="ranked-meta" style="margin:0;color:#A8862E">${durationLabel(taskDuration(task))}</div>
+          </div>
+          <button class="use-time-btn" style="margin:0" onclick="openBoardEdit('${task.id}')">Edit</button>
         </div>
-        <div style="text-align:right;flex-shrink:0">
-          <div class="ranked-meta" style="margin:0"><b style="color:#1A3A72">${range.start} - ${range.end}</b></div>
-          <div class="ranked-meta" style="margin:0;color:#A8862E">${durationLabel(taskDuration(task))}</div>
-        </div>
-        <button class="use-time-btn" style="margin:0" onclick="openBoardEdit('${task.id}')">Edit</button>
+        ${periodPills}
+        ${periodConflictMsg}
       </div>`;
   }
 
@@ -1323,6 +1465,13 @@ function renderBoardCard(task) {
 
 function openBoardEdit(taskId) {
   setState({ editingTaskId: taskId });
+}
+
+function setTaskPeriod(taskId, period) {
+  const tasks = state.tasks.map(t =>
+    t.id === taskId ? { ...t, taskPeriod: t.taskPeriod === period ? null : period } : t
+  );
+  setState({ tasks });
 }
 
 // Writes both a styled HTML version (time bold/blue, duration in light gold) and a
