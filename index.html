@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Priority Calculator</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; touch-action: manipulation; }
   body { background: #F2EFE8; font-family: -apple-system, 'Inter', sans-serif; min-height: 100vh; }
   .screen { padding: 32px 18px 80px; max-width: 560px; margin: 0 auto; }
   .eyebrow { font-size: 10.5px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #9A9188; margin-bottom: 6px; }
@@ -219,7 +219,11 @@ function setState(patch) {
   Object.assign(state, patch);
   saveSession();
   if (state.userName && state.track && state.profiles.length) saveDefaults();
-  render();
+  if (state.step === "setup") {
+    requestAnimationFrame(render);
+  } else {
+    render();
+  }
 }
 
 function startFresh() {
