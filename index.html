@@ -182,7 +182,7 @@ const state = {
   editingDayBounds: false, // true when revisiting the day-bounds entry screen via back navigation
   fixedCommitments: [],    // array of {id, name, start, end} — today's immovable blocks (meetings etc), fresh each session, not a remembered default
   fixedCommitmentsChoice: null, // "yes" | "skip" | null
-  breakTime: null,              // {start, duration} or null — today's planned break, treated as a fixed commitment
+  breakTimes: [],               // array of up to 2 {start, duration} — today's planned breaks, treated as fixed commitments
   entryMethod: null,       // "paste" | "fields" | null — fast lane task entry method
   pasteNote: "",           // raw pasted/typed note text before splitting
   parsedTasks: [],         // editable lines after splitting the note, before becoming real tasks
@@ -215,7 +215,7 @@ function saveSession() {
       workHours: state.workHours,
       fixedCommitments: state.fixedCommitments,
       fixedCommitmentsChoice: state.fixedCommitmentsChoice,
-      breakTime: state.breakTime,
+      breakTimes: state.breakTimes,
       entryMethod: state.entryMethod,
       pasteNote: state.pasteNote,
       parsedTasks: state.parsedTasks,
@@ -310,7 +310,7 @@ function startFresh() {
     workHours: defaults?.workHours || null,
     fixedCommitments: [],
     fixedCommitmentsChoice: null,
-    breakTime: null,
+    breakTimes: [],
     entryMethod: null,
     pasteNote: "",
     parsedTasks: [],
@@ -1341,6 +1341,18 @@ function runAutoPlacement() {
 
 // ─── BOARD (auto-placed, editable) ───────────────────────────────────────────
 
+function renderFixedBlock(c) {
+  const isBreak = c.isBreak;
+  return `<div style="display:flex;align-items:center;gap:12px;padding:10px 18px;margin-bottom:8px;border-radius:10px;background:${isBreak?"#F0EBE3":"#EEF2FA"};border:1px solid ${isBreak?"#E4DDD2":"#C8D5EE"}">
+    <div style="font-size:18px">${isBreak?"☕":"📌"}</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:13px;font-weight:700;color:${isBreak?"#7A6A5A":"#1A3A72"}">${escHtml(c.name)}</div>
+      <div style="font-size:11.5px;color:#9A9188">${formatTime12(c.start)} – ${formatTime12(c.end)}</div>
+    </div>
+    <div style="font-size:10px;font-weight:800;letter-spacing:0.06em;color:${isBreak?"#9A9188":"#1A3A72"};text-transform:uppercase">${isBreak?"Break":"Fixed"}</div>
+  </div>`;
+}
+
 function screenBoard() {
   // A task only belongs on the main timeline if it has a real scheduledTime AND its
   // flag is one that's allowed to carry a time. FWD tasks should never have a time at
@@ -1370,12 +1382,29 @@ function screenBoard() {
     <h1 style="margin-bottom:6px">Here's your plan</h1>
     <p class="sub">Tap edit on anything that doesn't look right.</p>
 
-    ${sorted.map((t,i) => {
-      const day = t.scheduledDay || "Today";
-      const prevDay = i > 0 ? (sorted[i-1].scheduledDay || "Today") : null;
-      const divider = (day !== prevDay) ? `<div class="divider-line light"><hr><span class="divider-label">${escHtml(day)}</span><hr></div>` : "";
-      return divider + renderBoardCard(t);
-    }).join("")}
+    ${(() => {
+      const todayFixed = (state.fixedCommitments || []).filter(c => c.start && c.end);
+      const allItems = [
+        ...sorted.map(t => ({ _type: "task", _sortMin: timeToMinutes(t.scheduledTime)||0, _day: t.scheduledDay||"Today", data: t })),
+        ...todayFixed.map(c => ({ _type: "fixed", _sortMin: timeToMinutes(c.start)||0, _day: "Today", data: c }))
+      ].sort((a,b) => {
+        const DAY_ORDER2 = { "Today": 0, "Tomorrow": 1 };
+        DAYS.forEach((d,i) => { if (!(d in DAY_ORDER2)) DAY_ORDER2[d] = 2+i; });
+        const da = DAY_ORDER2[a._day] ?? 99, db = DAY_ORDER2[b._day] ?? 99;
+        if (da !== db) return da - db;
+        return a._sortMin - b._sortMin;
+      });
+      let lastDay = null;
+      return allItems.map(item => {
+        let out = "";
+        if (item._day !== lastDay) {
+          out += `<div class="divider-line light"><hr><span class="divider-label">${escHtml(item._day)}</span><hr></div>`;
+          lastDay = item._day;
+        }
+        out += item._type === "fixed" ? renderFixedBlock(item.data) : renderBoardCard(item.data);
+        return out;
+      }).join("");
+    })()}
 
     ${unplacedTasks.length ? `
       <div class="card" style="border-color:#F5C97A;background:#FEF8EE">
@@ -2184,7 +2213,7 @@ function screenSetup() {
   const bounds = state.dayBounds || {};
   const wh = state.workHours || {};
   const fc = state.fixedCommitments || [];
-  const brk = state.breakTime || {};
+  const brk = (state.breakTimes && state.breakTimes[0]) || {};
 
   const BREAK_DURATIONS = [
     {mins:15,label:"15 min"},{mins:20,label:"20 min"},{mins:30,label:"30 min"},
@@ -2200,10 +2229,10 @@ function screenSetup() {
     : null;
   const fcSummary = (() => {
     const items = fc.filter(c=>!c.isBreak);
-    const hasBreak = brk.start && brk.duration;
+    const breaks = (state.breakTimes || []).filter(b => b.start && b.duration);
     const parts = items.slice(0,2).map(c=>c.name||"Commitment");
     if (items.length > 2) parts.push(`+${items.length-2} more`);
-    if (hasBreak) parts.push(`Break at ${formatTime12(brk.start)}`);
+    if (breaks.length) parts.push(breaks.map(b=>`Break at ${formatTime12(b.start)}`).join(", "));
     return parts.length ? parts.join(", ") : null;
   })();
 
@@ -2245,7 +2274,7 @@ function screenSetup() {
   let boundsBody = "";
   if (open.dayBounds) {
     boundsBody = `<div style="padding:0 18px 16px">
-      <div style="font-size:12px;color:#9A9188;margin-bottom:12px">We'll only schedule tasks between these times.</div>
+      <div style="font-size:12px;color:#9A9188;margin-bottom:12px">We'll only schedule tasks between these times. You can skip this, but we'll default to 8:00 AM – 8:00 PM — so if your day runs longer, it's worth setting now.</div>
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
         <span style="font-size:12px;color:#9A9188;flex-shrink:0">Day starts</span>
         <input type="time" value="${bounds.start||""}" onchange="setDayBoundsField('start',this.value)">
@@ -2287,14 +2316,16 @@ function screenSetup() {
       ${list.length < MAX_FIXED_COMMITMENTS ? `<button class="add-task-btn" style="margin-bottom:12px" onclick="addFixedCommitment()">+ Add another</button>` : ""}
       <div style="margin-top:8px;padding-top:12px;border-top:1px solid #F0EBE3">
         <div style="font-size:12px;font-weight:700;color:#1A1714;margin-bottom:8px">When do you want to take a break today?</div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <input type="time" value="${brk.start||""}" onchange="setBreakField('start',this.value)">
-          <select onchange="setBreakField('duration',this.value)" style="margin-bottom:0">
-            <option value="">How long?</option>
-            ${BREAK_DURATIONS.map(d=>`<option value="${d.mins}"${String(brk.duration)===String(d.mins)?" selected":""}>${d.label}</option>`).join("")}
-          </select>
-          ${brk.start&&brk.duration?`<button class="remove-btn" onclick="clearBreak()">×</button>`:""}
-        </div>
+        ${(state.breakTimes.length ? state.breakTimes : [{start:"",duration:""}]).map((b,idx) => `
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+            <input type="time" value="${b.start||""}" onchange="setBreakField(${idx},'start',this.value)">
+            <select onchange="setBreakField(${idx},'duration',this.value)" style="margin-bottom:0">
+              <option value="">How long?</option>
+              ${BREAK_DURATIONS.map(d=>`<option value="${d.mins}"${String(b.duration)===String(d.mins)?" selected":""}>${d.label}</option>`).join("")}
+            </select>
+            ${b.start&&b.duration?`<button class="remove-btn" onclick="removeBreakTime(${idx})">×</button>`:""}
+          </div>`).join("")}
+        ${state.breakTimes.length < 2 ? `<button class="add-task-btn" style="margin-top:4px" onclick="addBreakTime()">+ Add another break</button>` : ""}
       </div>
     </div>`;
   }
@@ -2303,7 +2334,7 @@ function screenSetup() {
     <button class="back-btn" onclick="setState({step:'track'})">← Back</button>
     <div class="eyebrow">Optional setup</div>
     <h1>Help us plan smarter</h1>
-    <p class="sub">All optional. Fill in what you know, skip the rest. You can update these any time.</p>
+    <p class="sub">The more you fill in, the better your plan. Tell us when your day starts and ends, what's already locked in, and when you need a break — and we'll schedule everything around it. Skip anything you don't need.</p>
     <div class="card" style="padding:0;overflow:hidden;margin-bottom:10px">
       ${sectionHeader("focusWindows","Focus windows",fwSummary)}
       ${fwBody || ""}
@@ -2333,12 +2364,13 @@ function toggleSetupSection(key) {
 function confirmSetup() {
   // Merge any break entry into the fixed commitments list, same as confirmFixedCommitments does.
   const cleaned = (state.fixedCommitments || []).filter(c => !c.isBreak && c.name.trim() && c.start && c.end);
-  const brk = state.breakTime;
-  if (brk?.start && brk?.duration) {
-    const breakMins = Number(brk.duration);
-    const breakStart = timeToMinutes(brk.start);
-    if (breakStart != null && breakMins > 0) {
-      cleaned.push({ id: uid(), name: "Break", start: brk.start, end: minutesToTime(breakStart + breakMins), isBreak: true });
+  for (const brk of (state.breakTimes || [])) {
+    if (brk?.start && brk?.duration) {
+      const breakMins = Number(brk.duration);
+      const breakStart = timeToMinutes(brk.start);
+      if (breakStart != null && breakMins > 0) {
+        cleaned.push({ id: uid(), name: "Break", start: brk.start, end: minutesToTime(breakStart + breakMins), isBreak: true });
+      }
     }
   }
   setState({ fixedCommitments: cleaned, step: "entrymethod" });
@@ -2641,14 +2673,16 @@ function screenFixedCommitments() {
     <div class="card" style="padding:16px 18px;border-style:dashed">
       <div class="field-label" style="margin-bottom:6px">When do you want to take a break today?</div>
       <div style="font-size:12px;color:#9A9188;margin-bottom:10px">Optional. We'll block it off so nothing gets scheduled over it.</div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <input type="time" value="${brk.start}" onchange="setBreakField('start',this.value)" placeholder="Start time">
-        <select onchange="setBreakField('duration',this.value)" style="margin-bottom:0">
-          <option value="">How long?</option>
-          ${BREAK_DURATIONS.map(d=>`<option value="${d.mins}"${String(brk.duration)===String(d.mins)?" selected":""}>${d.label}</option>`).join("")}
-        </select>
-        ${brk.start && brk.duration ? `<button class="remove-btn" onclick="setBreakField('start','');setBreakField('duration','')">×</button>` : ""}
-      </div>
+      ${(state.breakTimes.length ? state.breakTimes : [{ start: "", duration: "" }]).map((brk, idx) => `
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+          <input type="time" value="${brk.start||""}" onchange="setBreakField(${idx},'start',this.value)" placeholder="Start time">
+          <select onchange="setBreakField(${idx},'duration',this.value)" style="margin-bottom:0">
+            <option value="">How long?</option>
+            ${BREAK_DURATIONS.map(d=>`<option value="${d.mins}"${String(brk.duration)===String(d.mins)?" selected":""}>${d.label}</option>`).join("")}
+          </select>
+          ${brk.start && brk.duration ? `<button class="remove-btn" onclick="removeBreakTime(${idx})">×</button>` : ""}
+        </div>`).join("")}
+      ${state.breakTimes.length < 2 ? `<button class="add-task-btn" style="margin-top:4px" onclick="addBreakTime()">+ Add another break</button>` : ""}
     </div>
     <button class="primary-btn" id="fc-continue" ${allValid?"":"disabled"} style="margin-top:16px" onclick="confirmFixedCommitments()">Continue</button>
   </div>`;
@@ -2695,12 +2729,25 @@ function commitFixedCommitmentField(i, key, val) {
   if (btn) btn.disabled = !list.every(c => c.name.trim() && c.start && c.end);
 }
 
-function setBreakField(key, val) {
-  const brk = { ...(state.breakTime || { start: "", duration: "" }), [key]: val };
-  setState({ breakTime: brk });
+function setBreakField(idx, key, val) {
+  const breaks = [...(state.breakTimes || [])];
+  if (!breaks[idx]) breaks[idx] = { start: "", duration: "" };
+  breaks[idx] = { ...breaks[idx], [key]: val };
+  setState({ breakTimes: breaks });
 }
 
-function clearBreak() { setState({ breakTime: {} }); }
+function addBreakTime() {
+  const breaks = [...(state.breakTimes || [])];
+  if (breaks.length >= 2) return;
+  breaks.push({ start: "", duration: "" });
+  setState({ breakTimes: breaks });
+}
+
+function removeBreakTime(idx) {
+  const breaks = [...(state.breakTimes || [])];
+  breaks.splice(idx, 1);
+  setState({ breakTimes: breaks });
+}
 
 function confirmFixedCommitments() {
   // Drop any fully-empty trailing rows before saving.
@@ -2709,13 +2756,14 @@ function confirmFixedCommitments() {
   // If a break was configured, convert it to a fixed commitment entry so the
   // rest of the system (collision detection, placement, window capacity) treats
   // it identically to any other fixed block, with no extra awareness needed anywhere.
-  const brk = state.breakTime;
-  if (brk?.start && brk?.duration) {
-    const breakMins = Number(brk.duration);
-    const breakStart = timeToMinutes(brk.start);
-    if (breakStart != null && breakMins > 0) {
-      const breakEnd = minutesToTime(breakStart + breakMins);
-      cleaned.push({ id: uid(), name: "Break", start: brk.start, end: breakEnd, isBreak: true });
+  for (const brk of (state.breakTimes || [])) {
+    if (brk?.start && brk?.duration) {
+      const breakMins = Number(brk.duration);
+      const breakStart = timeToMinutes(brk.start);
+      if (breakStart != null && breakMins > 0) {
+        const breakEnd = minutesToTime(breakStart + breakMins);
+        cleaned.push({ id: uid(), name: "Break", start: brk.start, end: breakEnd, isBreak: true });
+      }
     }
   }
 
