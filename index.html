@@ -116,11 +116,6 @@
   .focus-suggestion { font-size: 11.5px; color: var(--c-blue); background: var(--c-card); border: 1px solid var(--c-border); border-radius: 7px; padding: 9px 10px; margin-bottom: 8px; line-height: 1.45; }
   .use-time-btn { display: block; margin-top: 7px; padding: 6px 12px; border-radius: 6px; border: none; background: var(--c-blue); color: var(--c-white); font-size: 11.5px; font-weight: 700; cursor: pointer; }
   input[type="text"], input[type="time"], select { padding: 8px 10px; border-radius: 7px; border: 1px solid var(--c-border); background: var(--c-bg); font-size: 13px; color: var(--c-text-main); outline: none; }
-  .tp-wrap { display:inline-flex; align-items:center; gap:4px; }
-  .tp-input { width:64px; padding:8px 8px; border-radius:7px; border:1px solid var(--c-border); background:var(--c-bg); font-size:13px; color:var(--c-text-main); outline:none; text-align:center; }
-  .tp-ampm { display:inline-flex; border-radius:6px; overflow:hidden; border:1px solid var(--c-border); flex-shrink:0; }
-  .tp-ampm button { padding:6px 9px; font-size:12px; font-weight:700; border:none; background:var(--c-bg); color:var(--c-text-sub); cursor:pointer; font-family:inherit; }
-  .tp-ampm button.active { background:var(--c-primary); color:var(--c-bg); }
   input[type="text"] { width: 100%; }
   select { display: block; margin-bottom: 7px; }
   .task-name-display { font-family: Georgia, serif; font-size: 16px; font-weight: 700; color: var(--c-text-main); margin-bottom: 14px; }
@@ -526,44 +521,6 @@ function rankTasks(tasks, track, profiles) {
 // `handlerExpr` is a JS expression string that will be called with the new 24hr value,
 // e.g. "setTaskField('abc','scheduledTime', __v__)" — __v__ is replaced with the value.
 // We use a unique `tpId` per instance so multiple pickers on the same screen don't clash.
-var _tpCounter = 0;
-function timePicker(val24, handlerExpr, extraStyle) {
-  const id = "tp" + (++_tpCounter);
-  // Parse existing 24hr value into hours, minutes, and period
-  let h = "", m = "", period = "AM";
-  if (val24 && val24.includes(":")) {
-    const parts = val24.split(":");
-    let hNum = parseInt(parts[0], 10);
-    m = parts[1] || "00";
-    if (hNum === 0) { h = "12"; period = "AM"; }
-    else if (hNum < 12) { h = String(hNum); period = "AM"; }
-    else if (hNum === 12) { h = "12"; period = "PM"; }
-    else { h = String(hNum - 12); period = "PM"; }
-  }
-  const displayVal = h ? (h + ":" + m) : "";
-  // Inline converter: reads the text input + active period button, converts to 24hr, calls handler
-  const converter = `(function(){
-    var el=document.getElementById('${id}');
-    var txt=el.value.trim();
-    if(!txt){return;}
-    var pp=txt.split(':');
-    var hh=parseInt(pp[0],10);
-    var mm=pp[1]?parseInt(pp[1],10):0;
-    if(isNaN(hh)||isNaN(mm))return;
-    var per=document.getElementById('${id}p').getAttribute('data-period');
-    if(per==='AM'){if(hh===12)hh=0;}else{if(hh!==12)hh+=12;}
-    var v=String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0');
-    ${handlerExpr.replace(/__v__/g, "v")}
-  })()`;
-  return `<span class="tp-wrap"${extraStyle ? ` style="${extraStyle}"` : ""}>
-    <input class="tp-input" id="${id}" type="text" inputmode="numeric" placeholder="h:mm" value="${displayVal}" onchange="${converter}" onblur="${converter}">
-    <span class="tp-ampm" id="${id}p" data-period="${period}">
-      <button class="${period==="AM"?"active":""}" onclick="(function(){var el=document.getElementById('${id}p');el.setAttribute('data-period','AM');el.querySelectorAll('button')[0].classList.add('active');el.querySelectorAll('button')[1].classList.remove('active');${converter}})()">AM</button>
-      <button class="${period==="PM"?"active":""}" onclick="(function(){var el=document.getElementById('${id}p');el.setAttribute('data-period','PM');el.querySelectorAll('button')[0].classList.remove('active');el.querySelectorAll('button')[1].classList.add('active');${converter}})()">PM</button>
-    </span>
-  </span>`;
-}
-// ─────────────────────────────────────────────────────────────────────────────
 
 function toggleTheme() {
   const current = document.documentElement.getAttribute("data-theme");
@@ -1051,7 +1008,7 @@ function renderTaskCard(task, index, track, profiles, totalTasks) {
             <button class="use-time-btn" onclick="setTaskField('${task.id}','scheduledTime','${suggestion.window.start}')">Use this time</button>
           </div>` : ""}
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:${autoDay?"0":"0"}">
-          ${timePicker(task.scheduledTime||"", "setTaskField('${task.id}','scheduledTime',__v__)")}
+          <input type="time" value="${task.scheduledTime||""}" onblur="setTimeout(()=>setTaskField('${task.id}','scheduledTime',this.value),100)" onchange="setTimeout(()=>setTaskField('${task.id}','scheduledTime',this.value),100)" style="margin-bottom:0">
           <select onchange="setTaskField('${task.id}','duration',this.value)" style="margin-bottom:0">
             <option value="">Duration</option>
             ${DURATIONS.map(d=>`<option value="${d.mins}"${String(task.duration)===String(d.mins)?" selected":""}>${d.label}</option>`).join("")}
@@ -1590,7 +1547,7 @@ function renderOtherBoardCard(t) {
         ${["Tomorrow",...DAYS].map(d=>`<option value="${d}"${t.scheduledDay===d?" selected":""}>${d}</option>`).join("")}
       </select>
       <div class="field-label">Time</div>
-      ${timePicker(t.scheduledTime||"", "setTaskField('${t.id}','scheduledTime',__v__)")}
+      <input type="time" value="${t.scheduledTime||""}" onblur="setTimeout(()=>setTaskField('${t.id}','scheduledTime',this.value),100)" onchange="setTimeout(()=>setTaskField('${t.id}','scheduledTime',this.value),100)" style="margin-bottom:12px">
       <button class="primary-btn" ${(t.scheduledDay && t.scheduledTime) ? "" : "disabled"} onclick="setState({editingTaskId:null})">Done</button>
     </div>`;
 }
@@ -1686,7 +1643,7 @@ function renderBoardCard(task) {
           ${["Tomorrow",...DAYS].map(d=>`<option value="${d}"${task.scheduledDay===d?" selected":""}>${d}</option>`).join("")}
         </select>
         <div class="field-label">Time</div>
-        ${timePicker(task.scheduledTime||"", "setTaskField('${task.id}','scheduledTime',__v__)")}
+        <input type="time" value="${task.scheduledTime||""}" onblur="setTimeout(()=>setTaskField('${task.id}','scheduledTime',this.value),100)" onchange="setTimeout(()=>setTaskField('${task.id}','scheduledTime',this.value),100)" style="margin-bottom:12px">
         <button class="primary-btn" style="margin-top:12px" onclick="setState({editingTaskId:null})">Done</button>
       </div>`;
   }
@@ -1700,7 +1657,7 @@ function renderBoardCard(task) {
         ${["Today","Tomorrow",...DAYS].map(d=>`<option value="${d}"${task.scheduledDay===d?" selected":""}>${d}</option>`).join("")}
       </select>
       <div class="field-label">Time</div>
-      ${timePicker(task.scheduledTime||"", "setTaskField('${task.id}','scheduledTime',__v__)")}
+      <input type="time" value="${task.scheduledTime||""}" onblur="setTimeout(()=>setTaskField('${task.id}','scheduledTime',this.value),100)" onchange="setTimeout(()=>setTaskField('${task.id}','scheduledTime',this.value),100)" style="margin-bottom:10px">
       <div class="field-label">Duration</div>
       <select onchange="setTaskField('${task.id}','duration',this.value)" style="margin-bottom:12px">
         ${DURATIONS.map(d=>`<option value="${d.mins}"${String(task.duration)===String(d.mins)?" selected":""}>${d.label}</option>`).join("")}
@@ -2456,9 +2413,9 @@ function screenSetup() {
         const w = windows[i]||{start:"",end:""};
         return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
           <span style="font-size:11px;color:#9A9188;width:70px;flex-shrink:0">${WINDOW_RANK_LABELS[i]||"Window "+(i+1)}</span>
-          ${timePicker(w.start, `setFocusWindowField(${i},'start',__v__)`)}
-          <span style="font-size:12px;color:#9A9188">to</span>
-          ${timePicker(w.end, `setFocusWindowField(${i},'end',__v__)`)}
+          <input type="time" value="${w.start}" onblur="setTimeout(()=>setFocusWindowField(${i},'start',this.value),100)" onchange="setTimeout(()=>setFocusWindowField(${i},'start',this.value),100)">
+          <span style="font-size:12px;color:var(--c-text-sub)">to</span>
+          <input type="time" value="${w.end}" onblur="setTimeout(()=>setFocusWindowField(${i},'end',this.value),100)" onchange="setTimeout(()=>setFocusWindowField(${i},'end',this.value),100)">
         </div>`;
       }).join("")}
     </div>`;
@@ -2470,10 +2427,10 @@ function screenSetup() {
     boundsBody = `<div style="padding:0 18px 16px">
       <div style="font-size:12px;color:#9A9188;margin-bottom:12px">We'll only schedule tasks between these times. You can skip this, but we'll default to 8:00 AM – 8:00 PM — so if your day runs longer, it's worth setting now.</div>
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
-        <span style="font-size:12px;color:#9A9188;flex-shrink:0">Day starts</span>
-        ${timePicker(bounds.start||"", "setDayBoundsField('start',__v__)")}
-        <span style="font-size:12px;color:#9A9188;flex-shrink:0">winds down</span>
-        ${timePicker(bounds.end||"", "setDayBoundsField('end',__v__)")}
+        <span style="font-size:12px;color:var(--c-text-sub);flex-shrink:0">Day starts</span>
+        <input type="time" value="${bounds.start||""}" onblur="setTimeout(()=>setDayBoundsField('start',this.value),100)" onchange="setTimeout(()=>setDayBoundsField('start',this.value),100)">
+        <span style="font-size:12px;color:var(--c-text-sub);flex-shrink:0">winds down</span>
+        <input type="time" value="${bounds.end||""}" onblur="setTimeout(()=>setDayBoundsField('end',this.value),100)" onchange="setTimeout(()=>setDayBoundsField('end',this.value),100)">
       </div>
       <div style="font-size:12px;color:#9A9188;margin-bottom:8px">Does your day split into work time and personal time?</div>
       <div class="hat-pills" style="margin-bottom:${state.workHoursChoice==="yes"?"10px":"0"}">
@@ -2483,9 +2440,9 @@ function screenSetup() {
       ${state.workHoursChoice==="yes" ? `
         <div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap">
           <span style="font-size:12px;color:#9A9188;flex-shrink:0">Work hours</span>
-          ${timePicker(wh.start||"", "setWorkHoursField('start',__v__)")}
-          <span style="font-size:12px;color:#9A9188;flex-shrink:0">to</span>
-          ${timePicker(wh.end||"", "setWorkHoursField('end',__v__)")}
+          <input type="time" value="${wh.start||""}" onblur="setTimeout(()=>setWorkHoursField('start',this.value),100)" onchange="setTimeout(()=>setWorkHoursField('start',this.value),100)">
+          <span style="font-size:12px;color:var(--c-text-sub);flex-shrink:0">to</span>
+          <input type="time" value="${wh.end||""}" onblur="setTimeout(()=>setWorkHoursField('end',this.value),100)" onchange="setTimeout(()=>setWorkHoursField('end',this.value),100)">
         </div>` : ""}
     </div>`;
   }
@@ -2502,9 +2459,9 @@ function screenSetup() {
           <input type="text" placeholder="e.g. Team standup" value="${escHtml(c.name)}" id="fc-name-${i}"
             oninput="setFixedCommitmentFieldQuiet(${i},'name',this.value)" onblur="commitFixedCommitmentField(${i},'name',this.value)"
             style="flex:1;min-width:120px">
-          ${timePicker(c.start, `setFixedCommitmentField(${i},'start',__v__)`)}
-          <span style="font-size:12px;color:#9A9188">to</span>
-          ${timePicker(c.end, `setFixedCommitmentField(${i},'end',__v__)`)}
+          <input type="time" value="${c.start}" onblur="setTimeout(()=>setFixedCommitmentField(${i},'start',this.value),100)" onchange="setTimeout(()=>setFixedCommitmentField(${i},'start',this.value),100)">
+          <span style="font-size:12px;color:var(--c-text-sub)">to</span>
+          <input type="time" value="${c.end}" onblur="setTimeout(()=>setFixedCommitmentField(${i},'end',this.value),100)" onchange="setTimeout(()=>setFixedCommitmentField(${i},'end',this.value),100)">
           ${displayList.length>1?`<button class="remove-btn" onclick="removeFixedCommitment(${i})">×</button>`:""}
         </div>`).join("")}
       ${list.length < MAX_FIXED_COMMITMENTS ? `<button class="add-task-btn" style="margin-bottom:12px" onclick="addFixedCommitment()">+ Add another</button>` : ""}
@@ -2512,7 +2469,7 @@ function screenSetup() {
         <div style="font-size:12px;font-weight:700;color:#1A1714;margin-bottom:8px">When do you want to take a break today?</div>
         ${(state.breakTimes.length ? state.breakTimes : [{start:"",duration:""}]).map((b,idx) => `
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
-            ${timePicker(b.start||"", `setBreakField(${idx},'start',__v__)`)}
+            <input type="time" value="${b.start||""}" onblur="setTimeout(()=>setBreakField(${idx},'start',this.value),100)" onchange="setTimeout(()=>setBreakField(${idx},'start',this.value),100)">
             <select onchange="setBreakField(${idx},'duration',this.value)" style="margin-bottom:0">
               <option value="">How long?</option>
               ${BREAK_DURATIONS.map(d=>`<option value="${d.mins}"${String(b.duration)===String(d.mins)?" selected":""}>${d.label}</option>`).join("")}
@@ -2647,9 +2604,9 @@ function screenFocus() {
         <div class="card" style="padding:16px 18px">
           <div class="field-label" style="margin-bottom:9px">${WINDOW_RANK_LABELS[i]}</div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            ${timePicker(w.start, `setFocusWindowField(${i},'start',__v__)`)}
-            <span style="font-size:12px;color:#9A9188">to</span>
-            ${timePicker(w.end, `setFocusWindowField(${i},'end',__v__)`)}
+            <input type="time" value="${w.start}" onblur="setTimeout(()=>setFocusWindowField(${i},'start',this.value),100)" onchange="setTimeout(()=>setFocusWindowField(${i},'start',this.value),100)">
+            <span style="font-size:12px;color:var(--c-text-sub)">to</span>
+            <input type="time" value="${w.end}" onblur="setTimeout(()=>setFocusWindowField(${i},'end',this.value),100)" onchange="setTimeout(()=>setFocusWindowField(${i},'end',this.value),100)">
           </div>
         </div>`).join("")}
       <button class="primary-btn" ${allFilled?"":"disabled"} onclick="confirmFocusWindows()">Continue</button>
@@ -2723,11 +2680,11 @@ function screenDayBounds() {
       <p class="sub">A rough range is enough.</p>
       <div class="card" style="padding:16px 18px">
         <div class="field-label" style="margin-bottom:9px">Day starts</div>
-        ${timePicker(bounds.start, "setDayBoundsField('start',__v__)")}
+        <input type="time" value="${bounds.start}" onblur="setTimeout(()=>setDayBoundsField('start',this.value),100)" onchange="setTimeout(()=>setDayBoundsField('start',this.value),100)">
       </div>
       <div class="card" style="padding:16px 18px">
         <div class="field-label" style="margin-bottom:9px">Day winds down</div>
-        ${timePicker(bounds.end, "setDayBoundsField('end',__v__)")}
+        <input type="time" value="${bounds.end}" onblur="setTimeout(()=>setDayBoundsField('end',this.value),100)" onchange="setTimeout(()=>setDayBoundsField('end',this.value),100)">
       </div>
       <button class="primary-btn" id="daybounds-continue" ${filled?"":"disabled"} onclick="confirmDayBounds()">Continue</button>
     </div>`;
@@ -2763,11 +2720,11 @@ function screenDayBounds() {
       <p class="sub">We'll treat the rest of your day, between this and when your day winds down, as personal time.</p>
       <div class="card" style="padding:16px 18px">
         <div class="field-label" style="margin-bottom:9px">Work starts</div>
-        ${timePicker(wh.start, "setWorkHoursField('start',__v__)")}
+        <input type="time" value="${wh.start}" onblur="setTimeout(()=>setWorkHoursField('start',this.value),100)" onchange="setTimeout(()=>setWorkHoursField('start',this.value),100)">
       </div>
       <div class="card" style="padding:16px 18px">
         <div class="field-label" style="margin-bottom:9px">Work ends</div>
-        ${timePicker(wh.end, "setWorkHoursField('end',__v__)")}
+        <input type="time" value="${wh.end}" onblur="setTimeout(()=>setWorkHoursField('end',this.value),100)" onchange="setTimeout(()=>setWorkHoursField('end',this.value),100)">
       </div>
       <button class="primary-btn" id="workhours-continue" ${filled?"":"disabled"} onclick="confirmWorkHours()">Continue</button>
     </div>`;
@@ -2858,9 +2815,9 @@ function screenFixedCommitments() {
         </div>
         <input type="text" placeholder="e.g. Team standup" value="${escHtml(c.name)}" id="fc-name-${i}" oninput="setFixedCommitmentFieldQuiet(${i},'name',this.value)" onblur="commitFixedCommitmentField(${i},'name',this.value)" style="width:100%;margin-bottom:10px">
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          ${timePicker(c.start, `setFixedCommitmentField(${i},'start',__v__)`)}
-          <span style="font-size:12px;color:#9A9188">to</span>
-          ${timePicker(c.end, `setFixedCommitmentField(${i},'end',__v__)`)}
+          <input type="time" value="${c.start}" onblur="setTimeout(()=>setFixedCommitmentField(${i},'start',this.value),100)" onchange="setTimeout(()=>setFixedCommitmentField(${i},'start',this.value),100)">
+          <span style="font-size:12px;color:var(--c-text-sub)">to</span>
+          <input type="time" value="${c.end}" onblur="setTimeout(()=>setFixedCommitmentField(${i},'end',this.value),100)" onchange="setTimeout(()=>setFixedCommitmentField(${i},'end',this.value),100)">
         </div>
       </div>`).join("")}
     ${list.length < MAX_FIXED_COMMITMENTS ? `<button class="add-task-btn" style="margin-bottom:16px" onclick="addFixedCommitment()">+ Add another</button>` : ""}
@@ -2869,7 +2826,7 @@ function screenFixedCommitments() {
       <div style="font-size:12px;color:#9A9188;margin-bottom:10px">Optional. We'll block it off so nothing gets scheduled over it.</div>
       ${(state.breakTimes.length ? state.breakTimes : [{ start: "", duration: "" }]).map((brk, idx) => `
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
-          ${timePicker(brk.start||"", `setBreakField(${idx},'start',__v__)`)}
+          <input type="time" value="${brk.start||""}" onblur="setTimeout(()=>setBreakField(${idx},'start',this.value),100)" onchange="setTimeout(()=>setBreakField(${idx},'start',this.value),100)">
           <select onchange="setBreakField(${idx},'duration',this.value)" style="margin-bottom:0">
             <option value="">How long?</option>
             ${BREAK_DURATIONS.map(d=>`<option value="${d.mins}"${String(brk.duration)===String(d.mins)?" selected":""}>${d.label}</option>`).join("")}
