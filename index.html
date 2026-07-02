@@ -1039,7 +1039,7 @@ function renderTaskCard(task, index, track, profiles, totalTasks) {
       extraHtml = `<div class="field-wrap">
         <div class="field-label">${flag==="ACT" ? "When will you do this?" : flag==="BLOCK" ? "When will you block time?" : "When do you plan to do this?"}</div>
         ${autoDay
-          ? `<div style="font-size:12px;color:#9A9188;margin-bottom:6px">Set for ${autoDay.toLowerCase()}, pick a time.</div>`
+          ? `<div style="font-size:12px;color:var(--c-text-sub);margin-bottom:6px">Set for ${autoDay.toLowerCase()}, pick a time.</div>`
           : `<select onchange="setTaskField('${task.id}','scheduledDay',this.value)">
                <option value="">Pick a day</option>
                ${DAYS.map(d=>`<option value="${d}"${task.scheduledDay===d?" selected":""}>${d}</option>`).join("")}
@@ -1227,7 +1227,7 @@ function screenFastScore() {
   const q = FAST_SCORE_QUESTIONS[step];
   const total = FAST_SCORE_QUESTIONS.length;
   const dots = FAST_SCORE_QUESTIONS.map((_,i) =>
-    `<div style="height:3px;flex:1;border-radius:2px;background:${i < step ? "#1A1714" : i === step ? "#9A9188" : "#E4DDD2"};transition:background 0.2s"></div>`
+    `<div style="height:3px;flex:1;border-radius:2px;background:${i < step ? "var(--c-primary)" : i === step ? "var(--c-accent)" : "var(--c-border)"};transition:background 0.2s"></div>`
   ).join("");
   const isLast = step === total - 1;
   const taskItems = state.tasks.map(t => {
@@ -1235,11 +1235,11 @@ function screenFastScore() {
     const greyed = q.isGreyed ? q.isGreyed(t) : false;
     return `
       <button onclick="${greyed ? "" : `fastScoreToggle('${t.id}',${step})`}"
-        style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:10px;border:${selected ? "1.5px solid #1A1714" : "0.5px solid #E4DDD2"};background:${selected ? "#F2EFE8" : "#fff"};cursor:${greyed ? "default" : "pointer"};width:100%;text-align:left;margin-bottom:8px;opacity:${greyed ? "0.35" : "1"};font-family:inherit">
-        <div style="width:18px;height:18px;border-radius:50%;border:${selected ? "none" : "1.5px solid #C0B8AE"};background:${selected ? "#1A1714" : "transparent"};flex-shrink:0;display:flex;align-items:center;justify-content:center">
-          ${selected ? `<div style="width:7px;height:7px;border-radius:50%;background:#F2EFE8"></div>` : ""}
+        style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:10px;border:${selected ? "1.5px solid var(--c-primary)" : "0.5px solid var(--c-border)"};background:${selected ? "var(--c-card)" : "var(--c-bg)"};cursor:${greyed ? "default" : "pointer"};width:100%;text-align:left;margin-bottom:8px;opacity:${greyed ? "0.35" : "1"};font-family:inherit">
+        <div style="width:18px;height:18px;border-radius:50%;border:${selected ? "none" : "1.5px solid var(--c-border)"};background:${selected ? "var(--c-primary)" : "transparent"};flex-shrink:0;display:flex;align-items:center;justify-content:center">
+          ${selected ? `<div style="width:7px;height:7px;border-radius:50%;background:var(--c-bg)"></div>` : ""}
         </div>
-        <span style="font-size:13px;color:${greyed ? "#9A9188" : "#1A1714"};line-height:1.35">${escHtml(t.name)}</span>
+        <span style="font-size:13px;color:${greyed ? "var(--c-text-sub)" : "var(--c-text-main)"};line-height:1.35">${escHtml(t.name)}</span>
       </button>`;
   }).join("");
   return `<div class="screen">
@@ -1442,13 +1442,13 @@ function runAutoPlacement() {
 
 function renderFixedBlock(c) {
   const isBreak = c.isBreak;
-  return `<div style="display:flex;align-items:center;gap:12px;padding:10px 18px;margin-bottom:8px;border-radius:10px;background:${isBreak?"#F0EBE3":"#EEF2FA"};border:1px solid ${isBreak?"#E4DDD2":"#C8D5EE"}">
+  return `<div style="display:flex;align-items:center;gap:12px;padding:10px 18px;margin-bottom:8px;border-radius:10px;background:var(--c-card);border:1px solid var(--c-border)">
     <div style="font-size:18px">${isBreak?"☕":"📌"}</div>
     <div style="flex:1;min-width:0">
-      <div style="font-size:13px;font-weight:700;color:${isBreak?"#7A6A5A":"#1A3A72"}">${escHtml(c.name)}</div>
-      <div style="font-size:11.5px;color:#9A9188">${formatTime12(c.start)} – ${formatTime12(c.end)}</div>
+      <div style="font-size:13px;font-weight:700;color:var(--c-text-main)">${escHtml(c.name)}</div>
+      <div style="font-size:11.5px;color:var(--c-text-sub)">${formatTime12(c.start)} – ${formatTime12(c.end)}</div>
     </div>
-    <div style="font-size:10px;font-weight:800;letter-spacing:0.06em;color:${isBreak?"#9A9188":"#1A3A72"};text-transform:uppercase">${isBreak?"Break":"Fixed"}</div>
+    <div style="font-size:10px;font-weight:800;letter-spacing:0.06em;color:var(--c-text-sub);text-transform:uppercase">${isBreak?"Break":"Fixed"}</div>
   </div>`;
 }
 
@@ -1476,7 +1476,10 @@ function screenBoard() {
   const cutTasks = other.filter(t => t.flag === "CUT");
 
   return `<div class="screen">
-    <button class="back-btn" onclick="setState({step:'fastscore', autoPlanned:false})">← Back to scoring</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <button class="back-btn" style="padding:0 0 0 0;margin:0" onclick="setState({step:'fastscore', autoPlanned:false})">← Back to scoring</button>
+      <button class="theme-toggle" onclick="toggleTheme();render()">${document.documentElement.getAttribute('data-theme')==='dark'?'☀️ Light':'🌙 Dark'}</button>
+    </div>
     <div class="eyebrow">${escHtml(state.userName)}'s day</div>
     <h1 style="margin-bottom:6px">Here's your plan</h1>
     <p class="sub">Tap edit on anything that doesn't look right.</p>
@@ -1532,8 +1535,8 @@ function screenBoard() {
       ${cutTasks.map(t => renderOtherBoardCard(t)).join("")}` : ""}
 
     ${state.boardMode === "view" ? `
-      <button class="copy-btn" id="copy-btn" style="background:#1A1714;width:100%;padding:11px;margin-top:8px" onclick="copyBoardList()">Copy to clipboard</button>
-      <button class="add-task-btn" style="margin-top:10px;border-style:solid;color:#1A3A72;border-color:#1A3A72" onclick="setState({boardMode:'edit'})">Edit tasks</button>
+      <button class="copy-btn" id="copy-btn" style="background:var(--c-primary);width:100%;padding:11px;margin-top:8px" onclick="copyBoardList()">Copy to clipboard</button>
+      <button class="add-task-btn" style="margin-top:10px;border-style:solid;color:var(--c-blue);border-color:var(--c-blue)" onclick="setState({boardMode:'edit'})">Edit tasks</button>
       <button class="add-task-btn" style="margin-top:10px;border-style:solid;color:#B08A6A" onclick="if(confirm('Clear this list and start over?'))startFresh()">Start a new list</button>
     ` : `
       <button class="primary-btn" style="margin-top:8px" onclick="setState({boardMode:'view',step:'home'})">Save</button>
@@ -1551,8 +1554,8 @@ function renderOtherBoardCard(t) {
         <div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;gap:12px">
           <span class="task-name-display" style="margin:0;font-size:14.5px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(t.name)}</span>
           <div style="text-align:right;flex-shrink:0">
-            <div class="ranked-meta" style="margin:0;color:#9A9188">Delegate to</div>
-            <div class="ranked-meta" style="margin:0"><b style="color:#1A3A72">${escHtml(t.delegateTo)}</b></div>
+            <div class="ranked-meta" style="margin:0;color:var(--c-text-sub)">Delegate to</div>
+            <div class="ranked-meta" style="margin:0"><b style="color:var(--c-accent)">${escHtml(t.delegateTo)}</b></div>
           </div>
           <button class="use-time-btn" style="margin:0" onclick="setState({editingTaskId:'${t.id}'})">Edit</button>
         </div>`;
@@ -1602,13 +1605,13 @@ function renderBoardCard(task) {
       return `
         <div class="card" data-id="${task.id}" style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;gap:12px;${task.done?"opacity:0.5;":""}" ${state.boardMode!=="view" ? `ondragover="boardDragOver(event,'${task.id}')" ondrop="boardDrop(event,'${task.id}')"` : ""}>
           ${state.boardMode === "view"
-            ? `<button onclick="toggleTaskDone('${task.id}')" style="background:none;border:${task.done?"2px solid #9A9188":"2px solid #C4BAB0"};border-radius:50%;width:22px;height:22px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">${task.done ? `<span style="color:#9A9188;font-size:13px">✓</span>` : ""}</button>`
+            ? `<button onclick="toggleTaskDone('${task.id}')" style="background:none;border:${task.done?"2px solid var(--c-accent)":"2px solid var(--c-border)"};border-radius:50%;width:22px;height:22px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">${task.done ? `<span style="color:var(--c-accent);font-size:13px">✓</span>` : ""}</button>`
             : `<span class="drag-handle" draggable="true" ondragstart="boardDragStart(event,'${task.id}')" ondragend="boardDragEnd(event)" ontouchstart="boardTouchStart(event,'${task.id}')" ontouchmove="boardTouchMove(event)" ontouchend="boardTouchEnd(event)">⠿</span>`
           }
-          <span class="task-name-display" style="margin:0;font-size:14.5px;flex:1;min-width:0;word-break:break-word;${task.done?"text-decoration:line-through;color:#9A9188":""}">${escHtml(task.name)}</span>
+          <span class="task-name-display" style="margin:0;font-size:14.5px;flex:1;min-width:0;word-break:break-word;${task.done?"text-decoration:line-through;color:var(--c-text-sub)":""}">${escHtml(task.name)}</span>
           <div style="text-align:right;flex-shrink:0">
             <div class="ranked-meta" style="margin:0">${escHtml(task.scheduledDay||"")}</div>
-            <div class="ranked-meta" style="margin:0"><b style="color:#1A3A72">${formatTime12(task.scheduledTime)}</b></div>
+            <div class="ranked-meta" style="margin:0"><b style="color:var(--c-accent)">${formatTime12(task.scheduledTime)}</b></div>
           </div>
           ${state.boardMode !== "view" ? `<button class="use-time-btn" style="margin:0" onclick="openBoardEdit('${task.id}')">Edit</button>` : ""}
         </div>`;
@@ -1654,15 +1657,15 @@ function renderBoardCard(task) {
       <div class="card" data-id="${task.id}" style="padding:14px 18px;${task.done?"opacity:0.5;":""}" ${!isViewMode ? `ondragover="boardDragOver(event,'${task.id}')" ondrop="boardDrop(event,'${task.id}')"` : ""}>
         <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
           ${isViewMode
-            ? `<button onclick="toggleTaskDone('${task.id}')" style="background:none;border:${task.done?"2px solid #9A9188":"2px solid #C4BAB0"};border-radius:50%;width:22px;height:22px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">${task.done ? `<span style="color:#9A9188;font-size:13px">✓</span>` : ""}</button>`
+            ? `<button onclick="toggleTaskDone('${task.id}')" style="background:none;border:${task.done?"2px solid var(--c-accent)":"2px solid var(--c-border)"};border-radius:50%;width:22px;height:22px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">${task.done ? `<span style="color:var(--c-accent);font-size:13px">✓</span>` : ""}</button>`
             : `<span class="drag-handle" draggable="true" ondragstart="boardDragStart(event,'${task.id}')" ondragend="boardDragEnd(event)" ontouchstart="boardTouchStart(event,'${task.id}')" ontouchmove="boardTouchMove(event)" ontouchend="boardTouchEnd(event)">⠿</span>`
           }
           <div style="flex:1;min-width:0">
-            <div class="task-name-display" style="margin:0;font-size:14.5px;word-break:break-word;${task.done?"text-decoration:line-through;color:#9A9188":""}">${escHtml(task.name)}</div>
-            ${task.placedInWindow ? `<div style="font-size:10.5px;color:#1A3A72;margin-top:2px;letter-spacing:0.03em">Placed in focus window</div>` : ""}
+            <div class="task-name-display" style="margin:0;font-size:14.5px;word-break:break-word;${task.done?"text-decoration:line-through;color:var(--c-text-sub)":""}">${escHtml(task.name)}</div>
+            ${task.placedInWindow ? `<div style="font-size:10.5px;color:var(--c-accent);margin-top:2px;letter-spacing:0.03em">Placed in focus window</div>` : ""}
           </div>
           <div style="text-align:right;flex-shrink:0">
-            <div class="ranked-meta" style="margin:0"><b style="color:#1A3A72">${range.start} - ${range.end}</b></div>
+            <div class="ranked-meta" style="margin:0"><b style="color:var(--c-accent)">${range.start} - ${range.end}</b></div>
             <div class="ranked-meta" style="margin:0;color:#A8862E">${durationLabel(taskDuration(task))}</div>
           </div>
           ${!isViewMode ? `<button class="use-time-btn" style="margin:0" onclick="openBoardEdit('${task.id}')">Edit</button>` : ""}
@@ -1911,11 +1914,11 @@ function copyBoardList() {
     if (t.flag === "CUT") {
       // Rescheduled task: day + time only, no duration was ever collected for these.
       plainLines.push(`${t.name} - ${t.scheduledDay||""} | ${range.start}`);
-      htmlLines.push(`${escHtml(t.name)} - ${escHtml(t.scheduledDay||"")} | <b style="color:#1A3A72">${range.start}</b>`);
+      htmlLines.push(`${escHtml(t.name)} - ${escHtml(t.scheduledDay||"")} | <b style="color:var(--c-accent)">${range.start}</b>`);
     } else {
       const dur = durationLabel(taskDuration(t));
       plainLines.push(`${t.name} - ${t.scheduledDay||"Today"} | ${range.start} - ${range.end} (${dur})`);
-      htmlLines.push(`${escHtml(t.name)} - ${escHtml(t.scheduledDay||"Today")} | <b style="color:#1A3A72">${range.start} - ${range.end}</b> <span style="color:#A8862E">(${dur})</span>`);
+      htmlLines.push(`${escHtml(t.name)} - ${escHtml(t.scheduledDay||"Today")} | <b style="color:var(--c-accent)">${range.start} - ${range.end}</b> <span style="color:#A8862E">(${dur})</span>`);
     }
   });
 
@@ -1961,7 +1964,7 @@ function renderRankedList(ranked, capacity) {
       rightHtml = `
         <div style="text-align:right;flex-shrink:0">
           ${dayPart ? `<div class="ranked-meta" style="margin:0">${escHtml(dayPart)}</div>` : ""}
-          <div class="ranked-meta" style="margin:0"><b style="color:#1A3A72">${range.start} - ${range.end}</b></div>
+          <div class="ranked-meta" style="margin:0"><b style="color:var(--c-accent)">${range.start} - ${range.end}</b></div>
           <div class="ranked-meta" style="margin:0;color:#A8862E">${durationLabel(taskDuration(t))}</div>
         </div>`;
     }
@@ -2058,7 +2061,7 @@ function copyList() {
     const range = taskTimeRange(task);
     const dur = durationLabel(taskDuration(task));
     plainLines.push(`${name} - ${day} | ${range.start} - ${range.end} (${dur})`);
-    htmlLines.push(`${escHtml(name)} - ${escHtml(day)} | <b style="color:#1A3A72">${range.start} - ${range.end}</b> <span style="color:#A8862E">(${dur})</span>`);
+    htmlLines.push(`${escHtml(name)} - ${escHtml(day)} | <b style="color:var(--c-accent)">${range.start} - ${range.end}</b> <span style="color:#A8862E">(${dur})</span>`);
   });
 
   if (unscheduled.length) {
@@ -2178,7 +2181,7 @@ function triageSheetHtml() {
     </div>
     <div style="margin-bottom:16px">
       <div class="field-label">What is it?</div>
-      <input type="text" id="triage-name-input" placeholder="Name the task briefly" value="${escHtml(ts.name)}" oninput="handleTriageNameInput(this.value)" style="font-family:Georgia,serif;font-size:14px;font-weight:600;border:1.5px solid #E4DDD2">
+      <input type="text" id="triage-name-input" placeholder="Name the task briefly" value="${escHtml(ts.name)}" oninput="handleTriageNameInput(this.value)" style="font-family:Georgia,serif;font-size:14px;font-weight:600;border:1.5px solid var(--c-border)">
     </div>
     ${qHtmlTriage("urgency","How urgent is this?",["No real deadline","Due soon","Due today"],ts.urgency)}
     ${qHtmlTriage("delegate","Can someone else handle this?",["No, it has to be me","Yes, I can pass it on"],ts.delegate)}
@@ -2256,16 +2259,16 @@ function renderLegend() {
     <div class="legend-row">
       ${flagBadge(f.code)}
       <div>
-        <div style="font-size:13px;font-weight:700;color:#1A1714;margin-bottom:2px">${f.label}</div>
-        <div style="font-size:12px;color:#9A9188;line-height:1.45">${FLAG_DESCS[f.code]}</div>
+        <div style="font-size:13px;font-weight:700;color:var(--c-text-main);margin-bottom:2px">${f.label}</div>
+        <div style="font-size:12px;color:var(--c-text-sub);line-height:1.45">${FLAG_DESCS[f.code]}</div>
       </div>
     </div>`).join("");
 
   return `
     <div class="legend-wrap">
       <button class="legend-toggle" onclick="setState({legendOpen:${!state.legendOpen}})">
-        <span style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#9A9188">What the flags mean</span>
-        <span style="font-size:14px;color:#9A9188;transform:${state.legendOpen?"rotate(180deg)":"none"};display:inline-block;transition:transform 0.2s">↓</span>
+        <span style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--c-text-sub)">What the flags mean</span>
+        <span style="font-size:14px;color:var(--c-text-sub);transform:${state.legendOpen?"rotate(180deg)":"none"};display:inline-block;transition:transform 0.2s">↓</span>
       </button>
       ${state.legendOpen ? `<div class="legend-body">${bodyHtml}</div>` : ""}
     </div>`;
@@ -2365,6 +2368,9 @@ function screenHome() {
 
 function screenWelcome() {
   return `<div style="min-height:100vh;background:var(--c-card);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 28px;text-align:center;max-width:560px;margin:0 auto">
+    <div style="position:absolute;top:max(16px,env(safe-area-inset-top));right:16px">
+      <button class="theme-toggle" onclick="toggleTheme();render()">${document.documentElement.getAttribute('data-theme')==='dark'?'☀️ Light':'🌙 Dark'}</button>
+    </div>
     <div style="font-size:72px;margin-bottom:32px;line-height:1">📝</div>
     <h1 style="font-family:'Playfair Display',Georgia,serif;font-size:30px;font-weight:700;color:var(--c-text-main);margin-bottom:12px;line-height:1.2">Welcome to your<br>Daily Planner</h1>
     <p style="font-size:14px;color:var(--c-text-sub);margin-bottom:48px;line-height:1.6;max-width:280px">I help you plan your day so you don't have to think too hard about it.</p>
@@ -2388,7 +2394,7 @@ function screenTrack() {
         <div class="track-btn-desc">${o.desc}</div>
       </button>`).join("")}
     <div style="margin-top:16px;margin-bottom:4px">
-      <label style="font-size:11px;font-weight:700;color:#9A9188;text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:6px">Your name (optional)</label>
+      <label style="font-size:11px;font-weight:700;color:var(--c-text-sub);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:6px">Your name (optional)</label>
       <input class="dump-input" type="text" id="name-input" placeholder="So we can personalise your list" value="${escHtml(state.userName)}"
         oninput="handleNameInput(this.value)" style="width:100%;box-sizing:border-box">
     </div>
@@ -2428,11 +2434,11 @@ function screenSetup() {
     const isOpen = open[key];
     return `<button onclick="toggleSetupSection('${key}')" style="width:100%;display:flex;justify-content:space-between;align-items:center;background:transparent;border:none;cursor:pointer;padding:14px 18px;text-align:left">
       <div>
-        <div style="font-size:14px;font-weight:700;color:#1A1714">${label}</div>
-        ${summary && !isOpen ? `<div style="font-size:12px;color:#1A3A72;margin-top:2px">${escHtml(summary)}</div>` : ""}
-        ${!summary && !isOpen ? `<div style="font-size:12px;color:#9A9188;margin-top:2px">Not set</div>` : ""}
+        <div style="font-size:14px;font-weight:700;color:var(--c-text-main)">${label}</div>
+        ${summary && !isOpen ? `<div style="font-size:12px;color:var(--c-accent);margin-top:2px">${escHtml(summary)}</div>` : ""}
+        ${!summary && !isOpen ? `<div style="font-size:12px;color:var(--c-text-sub);margin-top:2px">Not set</div>` : ""}
       </div>
-      <span style="font-size:18px;color:#9A9188;transform:${isOpen?"rotate(180deg)":"none"};display:inline-block;transition:transform 0.2s">↓</span>
+      <span style="font-size:18px;color:var(--c-text-sub);transform:${isOpen?"rotate(180deg)":"none"};display:inline-block;transition:transform 0.2s">↓</span>
     </button>`;
   }
 
@@ -2442,7 +2448,7 @@ function screenSetup() {
     const count = state.focusWindowCount || (fw.length || 1);
     const windows = fw.length ? fw : Array.from({length:1},()=>({start:"",end:""}));
     fwBody = `<div style="padding:0 18px 16px">
-      <div style="font-size:12px;color:#9A9188;margin-bottom:12px">The times when you focus best. Heaviest tasks get placed here first.</div>
+      <div style="font-size:12px;color:var(--c-text-sub);margin-bottom:12px">The times when you focus best. Heaviest tasks get placed here first.</div>
       <div style="display:flex;gap:8px;margin-bottom:10px">
         ${[1,2,3].map(n=>`<button class="hat-pill${count===n?" active":""}" onclick="setFocusWindowCount(${n})">${n} window${n>1?"s":""}</button>`).join("")}
       </div>
